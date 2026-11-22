@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.sm.pingpong",
+      "sha256_cert_fingerprints": [
+        "D2:B7:A9:E3:88:E4:91:18:F5:75:60:FF:59:6D:53:8C:A6:7A:8E:4E:BA:AE:64:2A:43:83:64:61:99:A3:4B:B7"
+      ]
+    }
+  }
+]

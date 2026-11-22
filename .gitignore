@@ -5,3 +5,14 @@ dist/
 *.keystore
 *.jks
 .env
+
+# Android TWA build (keystore lives outside the repo, in ~/Projects/keys/)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app-release-unsigned-aligned.apk
+android/app-release-signed.apk
+android/app-release-signed.apk.idsig
+android/app-release-bundle.aab
+android/manifest-checksum.txt

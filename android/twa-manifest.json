@@ -1,0 +1,38 @@
+{
+  "packageId": "com.sm.pingpong",
+  "host": "s-mykhailo.github.io",
+  "name": "Ping Pong Score",
+  "launcherName": "PingPong",
+  "display": "standalone",
+  "orientation": "landscape",
+  "themeColor": "#6750a4",
+  "navigationColor": "#6750a4",
+  "navigationColorDark": "#141218",
+  "backgroundColor": "#141218",
+  "enableNotifications": false,
+  "startUrl": "/pingpong-score/",
+  "iconUrl": "https://s-mykhailo.github.io/pingpong-score/icons/icon.svg",
+  "maskableIconUrl": "https://s-mykhailo.github.io/pingpong-score/icons/icon.svg",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "/home/rice/Projects/keys/pingpong-score.keystore",
+    "alias": "pingpong"
+  },
+  "appVersionCode": 1,
+  "appVersion": "1.0.0",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://s-mykhailo.github.io/pingpong-score/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://s-mykhailo.github.io/pingpong-score/",
+  "minSdkVersion": 24,
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}
