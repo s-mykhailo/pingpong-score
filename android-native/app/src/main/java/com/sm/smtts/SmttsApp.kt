@@ -2,6 +2,8 @@ package com.sm.smtts
 
 import android.app.Application
 import com.sm.smtts.data.AuthRepository
+import com.sm.smtts.data.MatchRepository
+import com.sm.smtts.data.PendingQueue
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.SessionStore
 
@@ -12,11 +14,17 @@ class SmttsApp : Application() {
         private set
     lateinit var roomRepository: RoomRepository
         private set
+    lateinit var matchRepository: MatchRepository
+        private set
+    lateinit var pendingQueue: PendingQueue
+        private set
 
     override fun onCreate() {
         super.onCreate()
         sessionStore = SessionStore(this)
         authRepository = AuthRepository(sessionStore)
         roomRepository = RoomRepository()
+        matchRepository = MatchRepository()
+        pendingQueue = PendingQueue(this)
     }
 }

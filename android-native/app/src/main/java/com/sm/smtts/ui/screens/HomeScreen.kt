@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -49,6 +50,7 @@ fun HomeScreen(
     session: Session,
     roomRepository: RoomRepository,
     authRepository: AuthRepository,
+    onOpenRoom: (RoomSummary) -> Unit,
     onLoggedOut: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -56,6 +58,8 @@ fun HomeScreen(
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var showJoinDialog by remember { mutableStateOf(false) }
+    var showCreateDialog by remember { mutableStateOf(false) }
+    val canCreateRooms = session.user.role == "admin" || session.user.role == "masterkey"
 
     fun reload() {
         loading = true
@@ -75,8 +79,15 @@ fun HomeScreen(
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = { showJoinDialog = true }) {
-                Icon(Icons.Filled.GroupAdd, contentDescription = "Приєднатися за кодом")
+            Column(horizontalAlignment = androidx.compose.ui.Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (canCreateRooms) {
+                    FloatingActionButton(onClick = { showCreateDialog = true }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Створити кімнату")
+                    }
+                }
+                FloatingActionButton(onClick = { showJoinDialog = true }) {
+                    Icon(Icons.Filled.GroupAdd, contentDescription = "Приєднатися за кодом")
+                }
             }
         },
     ) { padding ->
@@ -132,7 +143,7 @@ fun HomeScreen(
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        items(rooms) { room -> RoomCard(room) }
+                        items(rooms) { room -> RoomCard(room, onClick = { onOpenRoom(room) }) }
                     }
                 }
             }
@@ -155,11 +166,31 @@ fun HomeScreen(
             },
         )
     }
+
+    if (showCreateDialog) {
+        CreateRoomDialog(
+            onDismiss = { showCreateDialog = false },
+            onCreate = { name ->
+                scope.launch {
+                    try {
+                        roomRepository.createRoom(session.token, name)
+                        showCreateDialog = false
+                        reload()
+                    } catch (e: Exception) {
+                        error = e.message
+                    }
+                }
+            },
+        )
+    }
 }
 
 @Composable
-private fun RoomCard(room: RoomSummary) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun RoomCard(room: RoomSummary, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(room.name, style = MaterialTheme.typography.titleLarge)
             if (room.isAdmin) {
@@ -167,6 +198,29 @@ private fun RoomCard(room: RoomSummary) {
             }
         }
     }
+}
+
+@Composable
+private fun CreateRoomDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Нова кімната") },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Назва кімнати") },
+                singleLine = true,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onCreate(name.trim()) }, enabled = name.isNotBlank()) { Text("Створити") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Скасувати") }
+        },
+    )
 }
 
 @Composable

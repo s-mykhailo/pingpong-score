@@ -18,6 +18,8 @@ class MainActivity : ComponentActivity() {
                     sessionStore = app.sessionStore,
                     authRepository = app.authRepository,
                     roomRepository = app.roomRepository,
+                    matchRepository = app.matchRepository,
+                    pendingQueue = app.pendingQueue,
                 )
             }
         }

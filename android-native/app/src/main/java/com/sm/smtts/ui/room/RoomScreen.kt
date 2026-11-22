@@ -1,0 +1,109 @@
+package com.sm.smtts.ui.room
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sm.smtts.data.AuthRepository
+import com.sm.smtts.data.MatchRepository
+import com.sm.smtts.data.PendingQueue
+import com.sm.smtts.data.RoomRepository
+import com.sm.smtts.data.Session
+
+private enum class RoomTab(val label: String) { HOME("Головна"), STATS("Статистика"), PLAYERS("Гравці"), SETTINGS("Налаштування") }
+private enum class RoomRoute { TABS, MATCH_SETUP, SCOREBOARD }
+
+@Composable
+fun RoomScreen(
+    session: Session,
+    roomId: String,
+    roomName: String,
+    isAdmin: Boolean,
+    matchRepository: MatchRepository,
+    roomRepository: RoomRepository,
+    authRepository: AuthRepository,
+    pendingQueue: PendingQueue,
+    onLoggedOut: () -> Unit,
+) {
+    val vm: RoomViewModel = viewModel(
+        key = "room-$roomId",
+        factory = RoomViewModel.factory(session.token, roomId, matchRepository, pendingQueue),
+    )
+    var route by remember { mutableStateOf(RoomRoute.TABS) }
+    var tab by remember { mutableStateOf(RoomTab.HOME) }
+
+    when (route) {
+        RoomRoute.MATCH_SETUP -> MatchSetupScreen(
+            vm = vm,
+            onBack = { route = RoomRoute.TABS },
+            onStart = { route = RoomRoute.SCOREBOARD },
+        )
+        RoomRoute.SCOREBOARD -> ScoreboardScreen(vm = vm, onExit = { route = RoomRoute.TABS })
+        RoomRoute.TABS -> Scaffold(
+            bottomBar = {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = tab == RoomTab.HOME,
+                        onClick = { tab = RoomTab.HOME },
+                        icon = { Icon(Icons.Filled.Home, contentDescription = null) },
+                        label = { Text(RoomTab.HOME.label) },
+                    )
+                    NavigationBarItem(
+                        selected = tab == RoomTab.STATS,
+                        onClick = { tab = RoomTab.STATS },
+                        icon = { Icon(Icons.Filled.BarChart, contentDescription = null) },
+                        label = { Text(RoomTab.STATS.label) },
+                    )
+                    NavigationBarItem(
+                        selected = tab == RoomTab.PLAYERS,
+                        onClick = { tab = RoomTab.PLAYERS },
+                        icon = { Icon(Icons.Filled.Group, contentDescription = null) },
+                        label = { Text(RoomTab.PLAYERS.label) },
+                    )
+                    NavigationBarItem(
+                        selected = tab == RoomTab.SETTINGS,
+                        onClick = { tab = RoomTab.SETTINGS },
+                        icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                        label = { Text(RoomTab.SETTINGS.label) },
+                    )
+                }
+            },
+        ) { padding ->
+            Box(modifier = Modifier.padding(padding)) {
+                when (tab) {
+                    RoomTab.HOME -> RoomHomeTab(
+                        vm = vm,
+                        roomName = roomName,
+                        onNewMatch = { route = RoomRoute.MATCH_SETUP },
+                        onResumeMatch = { route = RoomRoute.SCOREBOARD },
+                    )
+                    RoomTab.STATS -> StatsTab(vm)
+                    RoomTab.PLAYERS -> PlayersTab(vm, isAdmin)
+                    RoomTab.SETTINGS -> SettingsTab(
+                        session = session,
+                        roomId = roomId,
+                        isAdmin = isAdmin,
+                        roomRepository = roomRepository,
+                        authRepository = authRepository,
+                        onLoggedOut = onLoggedOut,
+                    )
+                }
+            }
+        }
+    }
+}
