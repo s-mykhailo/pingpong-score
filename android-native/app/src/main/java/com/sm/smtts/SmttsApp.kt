@@ -6,6 +6,7 @@ import com.sm.smtts.data.MatchRepository
 import com.sm.smtts.data.PendingQueue
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.SessionStore
+import com.sm.smtts.data.ThemeStore
 
 class SmttsApp : Application() {
     lateinit var sessionStore: SessionStore
@@ -18,6 +19,8 @@ class SmttsApp : Application() {
         private set
     lateinit var pendingQueue: PendingQueue
         private set
+    lateinit var themeStore: ThemeStore
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -26,5 +29,6 @@ class SmttsApp : Application() {
         roomRepository = RoomRepository()
         matchRepository = MatchRepository()
         pendingQueue = PendingQueue(this)
+        themeStore = ThemeStore(this)
     }
 }

@@ -16,6 +16,7 @@ import com.sm.smtts.data.PendingQueue
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.RoomSummary
 import com.sm.smtts.data.SessionStore
+import com.sm.smtts.data.ThemeStore
 import com.sm.smtts.ui.room.RoomScreen
 import com.sm.smtts.ui.screens.AuthScreen
 import com.sm.smtts.ui.screens.HomeScreen
@@ -32,6 +33,7 @@ fun SmttsNavHost(
     roomRepository: RoomRepository,
     matchRepository: MatchRepository,
     pendingQueue: PendingQueue,
+    themeStore: ThemeStore,
 ) {
     val navController = rememberNavController()
     val session by sessionStore.session.collectAsState(initial = null)
@@ -64,6 +66,7 @@ fun SmttsNavHost(
                         roomRepository = roomRepository,
                         authRepository = authRepository,
                         pendingQueue = pendingQueue,
+                        themeStore = themeStore,
                         onLoggedOut = {
                             selectedRoom = null
                             navController.navigate(Routes.AUTH) { popUpTo(Routes.HOME) { inclusive = true } }

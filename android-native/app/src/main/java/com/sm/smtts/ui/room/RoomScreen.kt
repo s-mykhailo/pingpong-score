@@ -24,6 +24,7 @@ import com.sm.smtts.data.MatchRepository
 import com.sm.smtts.data.PendingQueue
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.Session
+import com.sm.smtts.data.ThemeStore
 
 private enum class RoomTab(val label: String) { HOME("Головна"), STATS("Статистика"), PLAYERS("Гравці"), SETTINGS("Налаштування") }
 private enum class RoomRoute { TABS, MATCH_SETUP, SCOREBOARD }
@@ -38,6 +39,7 @@ fun RoomScreen(
     roomRepository: RoomRepository,
     authRepository: AuthRepository,
     pendingQueue: PendingQueue,
+    themeStore: ThemeStore,
     onLoggedOut: () -> Unit,
 ) {
     val vm: RoomViewModel = viewModel(
@@ -100,6 +102,7 @@ fun RoomScreen(
                         isAdmin = isAdmin,
                         roomRepository = roomRepository,
                         authRepository = authRepository,
+                        themeStore = themeStore,
                         onLoggedOut = onLoggedOut,
                     )
                 }

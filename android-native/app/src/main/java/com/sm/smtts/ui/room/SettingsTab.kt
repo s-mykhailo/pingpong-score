@@ -11,12 +11,17 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,8 +32,11 @@ import androidx.compose.ui.unit.dp
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.Session
+import com.sm.smtts.data.ThemeMode
+import com.sm.smtts.data.ThemeStore
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsTab(
     session: Session,
@@ -36,11 +44,13 @@ fun SettingsTab(
     isAdmin: Boolean,
     roomRepository: RoomRepository,
     authRepository: AuthRepository,
+    themeStore: ThemeStore,
     onLoggedOut: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var codeToShow by remember { mutableStateOf<Pair<String, String>?>(null) } // title to code
     var error by remember { mutableStateOf<String?>(null) }
+    val themeMode by themeStore.mode.collectAsState(initial = ThemeMode.SYSTEM)
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Налаштування", style = MaterialTheme.typography.headlineSmall)
@@ -49,6 +59,27 @@ fun SettingsTab(
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(session.user.nickname, style = MaterialTheme.typography.titleMedium)
                 Text(roleLabel(session.user.role), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Тема", style = MaterialTheme.typography.titleMedium)
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                SegmentedButton(
+                    selected = themeMode == ThemeMode.SYSTEM,
+                    onClick = { scope.launch { themeStore.setMode(ThemeMode.SYSTEM) } },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
+                ) { Text("Системна") }
+                SegmentedButton(
+                    selected = themeMode == ThemeMode.LIGHT,
+                    onClick = { scope.launch { themeStore.setMode(ThemeMode.LIGHT) } },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
+                ) { Text("Світла") }
+                SegmentedButton(
+                    selected = themeMode == ThemeMode.DARK,
+                    onClick = { scope.launch { themeStore.setMode(ThemeMode.DARK) } },
+                    shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
+                ) { Text("Темна") }
             }
         }
 
