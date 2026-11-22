@@ -1,6 +1,8 @@
 package com.sm.smtts.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +14,8 @@ import androidx.compose.material.icons.filled.SportsTennis
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,8 +33,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.sm.smtts.R
 import com.sm.smtts.data.AuthRepository
+import com.sm.smtts.data.friendlyMessage
 import kotlinx.coroutines.launch
 
 @Composable
@@ -46,95 +54,106 @@ fun AuthScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var recoveryCodeToShow by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            Icons.Filled.SportsTennis,
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(R.drawable.home_wallpaper),
             contentDescription = null,
-            modifier = Modifier.size(48.dp),
-            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
         )
-        Text("SM TTS", style = MaterialTheme.typography.headlineMedium)
-        Text(
-            "Table Tennis Score",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        androidx.compose.foundation.layout.Spacer(Modifier.size(24.dp))
-
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            SegmentedButton(
-                selected = mode == 0,
-                onClick = { mode = 0; error = null },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-            ) { Text("Новий профіль") }
-            SegmentedButton(
-                selected = mode == 1,
-                onClick = { mode = 1; error = null },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-            ) { Text("Відновити") }
-        }
-
-        androidx.compose.foundation.layout.Spacer(Modifier.size(16.dp))
-
-        if (mode == 0) {
-            OutlinedTextField(
-                value = nickname,
-                onValueChange = { nickname = it },
-                label = { Text("Нікнейм") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(
+                Icons.Filled.SportsTennis,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary,
             )
-        } else {
-            OutlinedTextField(
-                value = code,
-                onValueChange = { code = it.uppercase() },
-                label = { Text("Код відновлення") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+            Text("SM TTS", style = MaterialTheme.typography.headlineMedium)
+            Text(
+                "Table Tennis Score",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
 
-        error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-        }
+            androidx.compose.foundation.layout.Spacer(Modifier.size(24.dp))
 
-        androidx.compose.foundation.layout.Spacer(Modifier.size(16.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        SegmentedButton(
+                            selected = mode == 0,
+                            onClick = { mode = 0; error = null },
+                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        ) { Text("Новий профіль") }
+                        SegmentedButton(
+                            selected = mode == 1,
+                            onClick = { mode = 1; error = null },
+                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        ) { Text("Відновити") }
+                    }
 
-        Button(
-            onClick = {
-                error = null
-                loading = true
-                scope.launch {
-                    try {
-                        if (mode == 0) {
-                            val (_, recoveryCode) = authRepository.register(nickname.trim().ifBlank { "Гравець" })
-                            recoveryCodeToShow = recoveryCode
+                    if (mode == 0) {
+                        OutlinedTextField(
+                            value = nickname,
+                            onValueChange = { nickname = it },
+                            label = { Text("Нікнейм") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        OutlinedTextField(
+                            value = code,
+                            onValueChange = { code = it.uppercase() },
+                            label = { Text("Код відновлення") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+
+                    error?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    Button(
+                        onClick = {
+                            error = null
+                            loading = true
+                            scope.launch {
+                                try {
+                                    if (mode == 0) {
+                                        val (_, recoveryCode) = authRepository.register(nickname.trim().ifBlank { "Гравець" })
+                                        recoveryCodeToShow = recoveryCode
+                                    } else {
+                                        authRepository.recoverAccount(code.trim())
+                                        onAuthed()
+                                    }
+                                } catch (e: Exception) {
+                                    error = friendlyMessage(e)
+                                } finally {
+                                    loading = false
+                                }
+                            }
+                        },
+                        enabled = !loading && (if (mode == 0) nickname.isNotBlank() else code.isNotBlank()),
+                        shape = ButtonDefaults.shape,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (loading) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onPrimary)
                         } else {
-                            authRepository.recoverAccount(code.trim())
-                            onAuthed()
+                            Text(if (mode == 0) "Створити профіль" else "Увійти")
                         }
-                    } catch (e: Exception) {
-                        error = e.message ?: "Щось пішло не так"
-                    } finally {
-                        loading = false
                     }
                 }
-            },
-            enabled = !loading && (if (mode == 0) nickname.isNotBlank() else code.isNotBlank()),
-            shape = ButtonDefaults.shape,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            if (loading) {
-                CircularProgressIndicator(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onPrimary)
-            } else {
-                Text(if (mode == 0) "Створити профіль" else "Увійти")
             }
         }
     }

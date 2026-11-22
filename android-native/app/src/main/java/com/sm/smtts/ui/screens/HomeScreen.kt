@@ -43,6 +43,7 @@ import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.RoomSummary
 import com.sm.smtts.data.Session
+import com.sm.smtts.data.friendlyMessage
 import kotlinx.coroutines.launch
 
 @Composable
@@ -68,7 +69,7 @@ fun HomeScreen(
                 rooms = roomRepository.myRooms(session.token)
                 error = null
             } catch (e: Exception) {
-                error = e.message
+                error = friendlyMessage(e)
             } finally {
                 loading = false
             }
@@ -160,7 +161,7 @@ fun HomeScreen(
                         showJoinDialog = false
                         reload()
                     } catch (e: Exception) {
-                        error = e.message
+                        error = friendlyMessage(e)
                     }
                 }
             },
@@ -177,7 +178,7 @@ fun HomeScreen(
                         showCreateDialog = false
                         reload()
                     } catch (e: Exception) {
-                        error = e.message
+                        error = friendlyMessage(e)
                     }
                 }
             },

@@ -18,6 +18,12 @@ class ApiException(message: String) : Exception(message)
 /** The request never reached the server (offline, DNS, timeout). Safe to retry later. */
 class NetworkException(cause: Throwable) : Exception(cause)
 
+fun friendlyMessage(e: Throwable): String = when (e) {
+    is NetworkException -> "Немає інтернету. Перевірте з'єднання і спробуйте ще раз."
+    is ApiException -> e.message ?: "Сервер відхилив запит."
+    else -> "Щось пішло не так."
+}
+
 object ApiClient {
     private val client = OkHttpClient.Builder().followRedirects(true).build()
     private val plainText = "text/plain".toMediaType()
