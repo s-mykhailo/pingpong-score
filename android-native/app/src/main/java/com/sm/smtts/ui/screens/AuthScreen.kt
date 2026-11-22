@@ -30,12 +30,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.sm.smtts.R
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.friendlyMessage
@@ -47,12 +49,14 @@ fun AuthScreen(
     onAuthed: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    var mode by remember { mutableStateOf(0) } // 0 = register, 1 = recover
-    var nickname by remember { mutableStateOf("") }
-    var code by remember { mutableStateOf("") }
+    var mode by rememberSaveable { mutableStateOf(0) } // 0 = register, 1 = recover
+    var nickname by rememberSaveable { mutableStateOf("") }
+    var code by rememberSaveable { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var recoveryCodeToShow by remember { mutableStateOf<String?>(null) }
+    // Saveable: this one-time code must survive a configuration change or process
+    // restart while the dialog is up, or it's lost for good (shown only once, ever).
+    var recoveryCodeToShow by rememberSaveable { mutableStateOf<String?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -161,6 +165,7 @@ fun AuthScreen(
     recoveryCodeToShow?.let { recCode ->
         AlertDialog(
             onDismissRequest = { },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
             title = { Text("Збережи код відновлення") },
             text = {
                 Column {

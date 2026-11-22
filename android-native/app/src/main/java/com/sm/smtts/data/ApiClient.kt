@@ -18,9 +18,16 @@ class ApiException(message: String) : Exception(message)
 /** The request never reached the server (offline, DNS, timeout). Safe to retry later. */
 class NetworkException(cause: Throwable) : Exception(cause)
 
+private val KNOWN_API_ERRORS = mapOf(
+    "nickname taken" to "Такий нікнейм вже зайнятий, вибери інший.",
+    "name required" to "Введи нікнейм.",
+    "name too long" to "Нікнейм задовгий (до 40 символів).",
+    "invalid code" to "Невірний код.",
+)
+
 fun friendlyMessage(e: Throwable): String = when (e) {
     is NetworkException -> "Немає інтернету. Перевірте з'єднання і спробуйте ще раз."
-    is ApiException -> e.message ?: "Сервер відхилив запит."
+    is ApiException -> KNOWN_API_ERRORS[e.message] ?: e.message ?: "Сервер відхилив запит."
     else -> "Щось пішло не так."
 }
 

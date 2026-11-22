@@ -222,6 +222,10 @@ function requireAdmin_(s) {
 function registerUser_(nickname, avatar) {
   nickname = cleanName_(nickname);
   avatar = String(avatar || '').slice(0, 4000);
+  const taken = readRows_(SHEET_USERS, USER_HEADERS).some(
+    (u) => String(u.nickname || '').toLowerCase() === nickname.toLowerCase(),
+  );
+  if (taken) throw new Error('nickname taken');
   const id = Utilities.getUuid();
   const token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
   const recoveryCode = randomCode_(14);
@@ -649,7 +653,7 @@ function softDelete_(sh, id, headers) {
 function notDeleted_(x) { return x.deleted !== true && x.deleted !== 'TRUE'; }
 
 function cleanName_(name) {
-  name = String(name || '').trim();
+  name = String(name || '').trim().replace(/\s+/g, ' ');
   if (!name) throw new Error('name required');
   if (name.length > 40) throw new Error('name too long');
   return name;
