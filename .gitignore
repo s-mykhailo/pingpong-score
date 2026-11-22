@@ -4,6 +4,7 @@ dist/
 .clasprc.json
 *.keystore
 *.jks
+keystore.properties
 .env
 
 # Android TWA build (keystore lives outside the repo, in ~/Projects/keys/)
