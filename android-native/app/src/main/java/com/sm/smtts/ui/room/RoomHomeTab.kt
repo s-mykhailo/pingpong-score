@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.sm.smtts.data.Match
 import com.sm.smtts.data.Player
 import com.sm.smtts.data.StatsEngine
+import com.sm.smtts.ui.theme.SmttsElevation
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -48,7 +50,10 @@ fun RoomHomeTab(vm: RoomViewModel, roomName: String, onNewMatch: () -> Unit, onR
         }
 
         if (live != null) {
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = SmttsElevation.card),
+            ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Матч триває", style = MaterialTheme.typography.titleMedium)
                     Text(
@@ -88,7 +93,10 @@ private fun MatchRow(m: Match, players: List<Player>) {
     val setsWon2 = m.sets.size - setsWon1
     val date = remember(m.playedAt) { formatDate(m.playedAt) }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = SmttsElevation.card),
+    ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("${if (winnerIsP1) p1 else p2} переміг ${if (winnerIsP1) p2 else p1}")

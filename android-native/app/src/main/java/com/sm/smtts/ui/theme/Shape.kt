@@ -13,3 +13,11 @@ val SmttsShapes = Shapes(
     large = RoundedCornerShape(28.dp),
     extraLarge = RoundedCornerShape(36.dp),
 )
+
+// Default Material3 Card/Button elevation is 0dp — with containerColor close to the
+// background that reads as flat. Giving cards a real shadow lifts them off the page.
+object SmttsElevation {
+    val card = 3.dp
+    val cardPressed = 1.dp
+    val raised = 6.dp
+}

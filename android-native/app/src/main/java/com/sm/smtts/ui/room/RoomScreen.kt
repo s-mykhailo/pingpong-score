@@ -1,5 +1,12 @@
 package com.sm.smtts.ui.room
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BarChart
@@ -103,24 +110,35 @@ fun RoomScreen(
             },
         ) { padding ->
             Box(modifier = Modifier.padding(padding)) {
-                when (tab) {
-                    RoomTab.HOME -> RoomHomeTab(
-                        vm = vm,
-                        roomName = roomName,
-                        onNewMatch = { route = RoomRoute.MATCH_SETUP },
-                        onResumeMatch = { route = RoomRoute.SCOREBOARD },
-                    )
-                    RoomTab.STATS -> StatsTab(vm)
-                    RoomTab.PLAYERS -> PlayersTab(vm, isAdmin)
-                    RoomTab.SETTINGS -> SettingsTab(
-                        session = session,
-                        roomId = roomId,
-                        isAdmin = isAdmin,
-                        roomRepository = roomRepository,
-                        authRepository = authRepository,
-                        themeStore = themeStore,
-                        onLoggedOut = onLoggedOut,
-                    )
+                AnimatedContent(
+                    targetState = tab,
+                    transitionSpec = {
+                        val forward = targetState.ordinal > initialState.ordinal
+                        val towards = if (forward) 1 else -1
+                        (slideInHorizontally(animationSpec = tween(220)) { width -> towards * width / 4 } + fadeIn(tween(220)))
+                            .togetherWith(slideOutHorizontally(animationSpec = tween(220)) { width -> -towards * width / 4 } + fadeOut(tween(140)))
+                    },
+                    label = "room-tab",
+                ) { targetTab ->
+                    when (targetTab) {
+                        RoomTab.HOME -> RoomHomeTab(
+                            vm = vm,
+                            roomName = roomName,
+                            onNewMatch = { route = RoomRoute.MATCH_SETUP },
+                            onResumeMatch = { route = RoomRoute.SCOREBOARD },
+                        )
+                        RoomTab.STATS -> StatsTab(vm)
+                        RoomTab.PLAYERS -> PlayersTab(vm, isAdmin)
+                        RoomTab.SETTINGS -> SettingsTab(
+                            session = session,
+                            roomId = roomId,
+                            isAdmin = isAdmin,
+                            roomRepository = roomRepository,
+                            authRepository = authRepository,
+                            themeStore = themeStore,
+                            onLoggedOut = onLoggedOut,
+                        )
+                    }
                 }
             }
         }

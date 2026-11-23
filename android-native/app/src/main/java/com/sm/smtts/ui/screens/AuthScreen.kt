@@ -38,6 +38,7 @@ import com.sm.smtts.R
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.friendlyMessage
 import com.sm.smtts.ui.theme.LocalDarkTheme
+import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
 
 @Composable
@@ -84,6 +85,7 @@ fun AuthScreen(
 
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = SmttsElevation.raised),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

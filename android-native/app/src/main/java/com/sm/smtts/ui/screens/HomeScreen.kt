@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -51,6 +52,7 @@ import com.sm.smtts.data.RoomSummary
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.friendlyMessage
 import com.sm.smtts.ui.theme.LocalDarkTheme
+import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -274,7 +276,10 @@ fun HomeScreen(
 
 @Composable
 private fun PendingRoomCard(title: String, status: String) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = SmttsElevation.card),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -294,6 +299,7 @@ private fun RoomCard(room: RoomSummary, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = SmttsElevation.card),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(room.name, style = MaterialTheme.typography.titleLarge)
