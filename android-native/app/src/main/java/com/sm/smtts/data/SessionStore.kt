@@ -13,11 +13,28 @@ private val Context.dataStore by preferencesDataStore(name = "session")
 class SessionStore(private val context: Context) {
     private val tokenKey = stringPreferencesKey("token")
     private val userKey = stringPreferencesKey("user_json")
+    private val pendingRecoveryKey = stringPreferencesKey("pending_recovery_code")
 
     val session: Flow<Session?> = context.dataStore.data.map { prefs ->
         val token = prefs[tokenKey] ?: return@map null
         val userJson = prefs[userKey] ?: return@map null
         Session(token, User.fromJson(JSONObject(userJson)))
+    }
+
+    /**
+     * A freshly issued recovery code the user has not yet confirmed writing down.
+     * Persisted rather than held in composition state: the code is shown exactly once,
+     * ever, and saving the session re-roots the whole UI tree, so in-memory state for it
+     * is lost the moment registration succeeds.
+     */
+    val pendingRecoveryCode: Flow<String?> = context.dataStore.data.map { it[pendingRecoveryKey] }
+
+    suspend fun setPendingRecoveryCode(code: String) {
+        context.dataStore.edit { it[pendingRecoveryKey] = code }
+    }
+
+    suspend fun clearPendingRecoveryCode() {
+        context.dataStore.edit { it.remove(pendingRecoveryKey) }
     }
 
     suspend fun save(session: Session) {
@@ -47,6 +64,7 @@ class SessionStore(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs.remove(tokenKey)
             prefs.remove(userKey)
+            prefs.remove(pendingRecoveryKey)
         }
     }
 }

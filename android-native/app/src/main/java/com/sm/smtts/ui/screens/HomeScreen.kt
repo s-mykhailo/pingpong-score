@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.GroupAdd
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -52,6 +53,7 @@ fun HomeScreen(
     roomRepository: RoomRepository,
     authRepository: AuthRepository,
     onOpenRoom: (RoomSummary) -> Unit,
+    onOpenSettings: () -> Unit,
     onLoggedOut: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -116,13 +118,18 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    IconButton(onClick = {
-                        scope.launch {
-                            authRepository.logout(session.token)
-                            onLoggedOut()
+                    Row {
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(Icons.Filled.Settings, contentDescription = "Налаштування")
                         }
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Вийти")
+                        IconButton(onClick = {
+                            scope.launch {
+                                authRepository.logout(session.token)
+                                onLoggedOut()
+                            }
+                        }) {
+                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Вийти")
+                        }
                     }
                 }
 
@@ -245,10 +252,4 @@ private fun JoinRoomDialog(onDismiss: () -> Unit, onJoin: (String) -> Unit) {
             TextButton(onClick = onDismiss) { Text("Скасувати") }
         },
     )
-}
-
-private fun roleLabel(role: String) = when (role) {
-    "masterkey" -> "Мастерки"
-    "admin" -> "Адмін"
-    else -> "Гравець"
 }

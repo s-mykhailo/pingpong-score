@@ -8,10 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SportsTennis
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -24,7 +22,6 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import com.sm.smtts.R
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.friendlyMessage
@@ -54,9 +50,6 @@ fun AuthScreen(
     var code by rememberSaveable { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    // Saveable: this one-time code must survive a configuration change or process
-    // restart while the dialog is up, or it's lost for good (shown only once, ever).
-    var recoveryCodeToShow by rememberSaveable { mutableStateOf<String?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -134,12 +127,11 @@ fun AuthScreen(
                             scope.launch {
                                 try {
                                     if (mode == 0) {
-                                        val (_, recoveryCode) = authRepository.register(nickname.trim().ifBlank { "Гравець" })
-                                        recoveryCodeToShow = recoveryCode
+                                        authRepository.register(nickname.trim().ifBlank { "Гравець" })
                                     } else {
                                         authRepository.recoverAccount(code.trim())
-                                        onAuthed()
                                     }
+                                    onAuthed()
                                 } catch (e: Exception) {
                                     error = friendlyMessage(e)
                                 } finally {
@@ -160,28 +152,5 @@ fun AuthScreen(
                 }
             }
         }
-    }
-
-    recoveryCodeToShow?.let { recCode ->
-        AlertDialog(
-            onDismissRequest = { },
-            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
-            title = { Text("Збережи код відновлення") },
-            text = {
-                Column {
-                    Text("Цей код показується один раз. Він потрібен, щоб увійти в акаунт з іншого пристрою.")
-                    androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
-                    SelectionContainer {
-                        Text(recCode, style = MaterialTheme.typography.headlineSmall)
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    recoveryCodeToShow = null
-                    onAuthed()
-                }) { Text("Зберіг, продовжити") }
-            },
-        )
     }
 }
