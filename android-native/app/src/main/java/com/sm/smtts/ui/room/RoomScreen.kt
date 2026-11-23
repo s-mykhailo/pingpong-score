@@ -36,6 +36,7 @@ import com.sm.smtts.data.PendingQueue
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.ThemeStore
+import com.sm.smtts.ui.theme.DriftingBackground
 import kotlinx.coroutines.launch
 
 private enum class RoomTab(val label: String) { HOME("Головна"), STATS("Статистика"), PLAYERS("Гравці"), SETTINGS("Налаштування") }
@@ -126,45 +127,48 @@ fun RoomScreen(
                 }
             },
         ) { padding ->
-            Box(modifier = Modifier.padding(padding)) {
-                PullToRefreshBox(
-                    isRefreshing = refreshing,
-                    onRefresh = {
-                        refreshing = true
-                        scope.launch {
-                            vm.refresh().join()
-                            refreshing = false
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    HorizontalPager(
-                        state = pagerState,
+            Box(modifier = Modifier.fillMaxSize()) {
+                DriftingBackground(modifier = Modifier.fillMaxSize())
+                Box(modifier = Modifier.padding(padding)) {
+                    PullToRefreshBox(
+                        isRefreshing = refreshing,
+                        onRefresh = {
+                            refreshing = true
+                            scope.launch {
+                                vm.refresh().join()
+                                refreshing = false
+                            }
+                        },
                         modifier = Modifier.fillMaxSize(),
-                    ) { page ->
-                        when (RoomTab.entries[page]) {
-                            RoomTab.HOME -> RoomHomeTab(
-                                vm = vm,
-                                roomName = roomName,
-                                onNewMatch = { route = RoomRoute.MATCH_SETUP },
-                                onResumeMatch = { route = RoomRoute.SCOREBOARD },
-                            )
-                            RoomTab.STATS -> StatsTab(vm)
-                            RoomTab.PLAYERS -> PlayersTab(
-                                vm = vm,
-                                isAdmin = isAdmin,
-                                session = session,
-                                roomId = roomId,
-                                roomRepository = roomRepository,
-                            )
-                            RoomTab.SETTINGS -> SettingsTab(
-                                session = session,
-                                roomId = roomId,
-                                isAdmin = isAdmin,
-                                authRepository = authRepository,
-                                themeStore = themeStore,
-                                onLoggedOut = onLoggedOut,
-                            )
+                    ) {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize(),
+                        ) { page ->
+                            when (RoomTab.entries[page]) {
+                                RoomTab.HOME -> RoomHomeTab(
+                                    vm = vm,
+                                    roomName = roomName,
+                                    onNewMatch = { route = RoomRoute.MATCH_SETUP },
+                                    onResumeMatch = { route = RoomRoute.SCOREBOARD },
+                                )
+                                RoomTab.STATS -> StatsTab(vm)
+                                RoomTab.PLAYERS -> PlayersTab(
+                                    vm = vm,
+                                    isAdmin = isAdmin,
+                                    session = session,
+                                    roomId = roomId,
+                                    roomRepository = roomRepository,
+                                )
+                                RoomTab.SETTINGS -> SettingsTab(
+                                    session = session,
+                                    roomId = roomId,
+                                    isAdmin = isAdmin,
+                                    authRepository = authRepository,
+                                    themeStore = themeStore,
+                                    onLoggedOut = onLoggedOut,
+                                )
+                            }
                         }
                     }
                 }
