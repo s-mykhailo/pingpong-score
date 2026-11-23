@@ -50,7 +50,7 @@ android {
         jvmTarget = "17"
     }
 
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     lint { checkReleaseBuilds = false; abortOnError = false }
     packaging { resources { excludes += "/META-INF/**" } }
     dependenciesInfo { includeInApk = false; includeInBundle = false }
