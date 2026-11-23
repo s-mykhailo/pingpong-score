@@ -51,6 +51,7 @@ import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.RoomSummary
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.theme.DriftingBackground
 import com.sm.smtts.ui.theme.LocalDarkTheme
 import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
@@ -170,6 +171,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
+            DriftingBackground(modifier = Modifier.fillMaxSize(), darkTheme = darkTheme)
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),

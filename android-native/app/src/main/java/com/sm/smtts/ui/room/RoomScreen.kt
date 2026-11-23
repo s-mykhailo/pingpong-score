@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
@@ -36,6 +37,7 @@ import com.sm.smtts.data.PendingQueue
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.ThemeStore
+import com.sm.smtts.ui.theme.DriftingBackground
 
 private enum class RoomTab(val label: String) { HOME("Головна"), STATS("Статистика"), PLAYERS("Гравці"), SETTINGS("Налаштування") }
 private enum class RoomRoute { TABS, MATCH_SETUP, SCOREBOARD }
@@ -109,8 +111,10 @@ fun RoomScreen(
                 }
             },
         ) { padding ->
-            Box(modifier = Modifier.padding(padding)) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                DriftingBackground(modifier = Modifier.fillMaxSize())
                 AnimatedContent(
+                    modifier = Modifier.padding(padding),
                     targetState = tab,
                     transitionSpec = {
                         val forward = targetState.ordinal > initialState.ordinal
