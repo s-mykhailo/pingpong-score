@@ -20,6 +20,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,6 +30,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,9 +55,11 @@ import com.sm.smtts.data.Session
 import com.sm.smtts.data.friendlyMessage
 import com.sm.smtts.ui.theme.LocalDarkTheme
 import com.sm.smtts.ui.theme.SmttsElevation
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     session: Session,
@@ -77,10 +81,11 @@ fun HomeScreen(
     val canCreateRooms = session.user.role == "admin" || session.user.role == "masterkey"
     val hasContent = rooms.isNotEmpty() || pendingCreates.isNotEmpty() || pendingJoins.isNotEmpty()
     var syncingRooms by remember { mutableStateOf(false) }
+    var refreshing by remember { mutableStateOf(false) }
 
-    fun reload(showSpinner: Boolean = true) {
+    fun reload(showSpinner: Boolean = true): Job {
         if (showSpinner) loading = true
-        scope.launch {
+        return scope.launch {
             try {
                 rooms = roomRepository.myRooms(session.token)
                 error = null
@@ -211,27 +216,39 @@ fun HomeScreen(
                     )
                 }
 
-                when {
-                    loading -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                    error != null && !hasContent -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                        Text(error ?: "", color = MaterialTheme.colorScheme.error)
-                    }
-                    !hasContent -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                        Text(
-                            "Ще немає кімнат. Приєднайся за кодом.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    else -> LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(pendingCreates) { item -> PendingRoomCard(title = item.name, status = "Створюється…") }
-                        items(pendingJoins) { item -> PendingRoomCard(title = "Приєднання…", status = "Код: ${item.code}") }
-                        items(rooms) { room -> RoomCard(room, onClick = { onOpenRoom(room) }) }
+                PullToRefreshBox(
+                    isRefreshing = refreshing,
+                    onRefresh = {
+                        refreshing = true
+                        scope.launch {
+                            reload(showSpinner = false).join()
+                            refreshing = false
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    when {
+                        loading -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                        error != null && !hasContent -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            Text(error ?: "", color = MaterialTheme.colorScheme.error)
+                        }
+                        !hasContent -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            Text(
+                                "Ще немає кімнат. Приєднайся за кодом.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        else -> LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            items(pendingCreates) { item -> PendingRoomCard(title = item.name, status = "Створюється…") }
+                            items(pendingJoins) { item -> PendingRoomCard(title = "Приєднання…", status = "Код: ${item.code}") }
+                            items(rooms) { room -> RoomCard(room, onClick = { onOpenRoom(room) }) }
+                        }
                     }
                 }
             }
