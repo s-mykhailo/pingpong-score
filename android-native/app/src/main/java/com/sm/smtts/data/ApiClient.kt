@@ -23,6 +23,7 @@ private val KNOWN_API_ERRORS = mapOf(
     "name required" to "Введи нікнейм.",
     "name too long" to "Нікнейм задовгий (до 40 символів).",
     "invalid code" to "Невірний код.",
+    "unauthorized" to "Невірний master key.",
 )
 
 fun friendlyMessage(e: Throwable): String = when (e) {

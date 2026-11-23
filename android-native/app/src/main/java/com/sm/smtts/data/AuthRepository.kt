@@ -30,12 +30,18 @@ class AuthRepository(private val sessionStore: SessionStore) {
         return user
     }
 
-    suspend fun claimMasterkey(token: String, masterKey: String) {
-        ApiClient.call("claimMasterkey", token = token, payload = mapOf("masterKey" to masterKey))
+    suspend fun claimMasterkey(token: String, masterKey: String): User {
+        val res = ApiClient.call("claimMasterkey", token = token, payload = mapOf("masterKey" to masterKey))
+        val user = User.fromJson(res.getJSONObject("user"))
+        sessionStore.updateUser(user)
+        return user
     }
 
-    suspend fun claimAdmin(token: String, code: String) {
-        ApiClient.call("claimAdmin", token = token, payload = mapOf("code" to code))
+    suspend fun claimAdmin(token: String, code: String): User {
+        val res = ApiClient.call("claimAdmin", token = token, payload = mapOf("code" to code))
+        val user = User.fromJson(res.getJSONObject("user"))
+        sessionStore.updateUser(user)
+        return user
     }
 
     suspend fun createAdminInvite(token: String): String {

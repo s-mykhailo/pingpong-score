@@ -15,6 +15,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -34,6 +35,7 @@ import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.ThemeMode
 import com.sm.smtts.data.ThemeStore
+import com.sm.smtts.data.friendlyMessage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +52,8 @@ fun SettingsTab(
     val scope = rememberCoroutineScope()
     var codeToShow by remember { mutableStateOf<Pair<String, String>?>(null) } // title to code
     var error by remember { mutableStateOf<String?>(null) }
+    var masterKeyInput by remember { mutableStateOf("") }
+    var adminCodeInput by remember { mutableStateOf("") }
     val themeMode by themeStore.mode.collectAsState(initial = ThemeMode.SYSTEM)
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -83,6 +87,62 @@ fun SettingsTab(
             }
         }
 
+        if (session.user.role != "masterkey") {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Активувати мастер-ключ", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = masterKeyInput,
+                    onValueChange = { masterKeyInput = it },
+                    label = { Text("Master key") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Button(
+                    onClick = {
+                        error = null
+                        scope.launch {
+                            try {
+                                authRepository.claimMasterkey(session.token, masterKeyInput.trim())
+                                masterKeyInput = ""
+                            } catch (e: Exception) {
+                                error = friendlyMessage(e)
+                            }
+                        }
+                    },
+                    enabled = masterKeyInput.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Активувати") }
+            }
+        }
+
+        if (session.user.role == "user") {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Активувати адмінку", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = adminCodeInput,
+                    onValueChange = { adminCodeInput = it.uppercase() },
+                    label = { Text("Код від мастер-кея") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Button(
+                    onClick = {
+                        error = null
+                        scope.launch {
+                            try {
+                                authRepository.claimAdmin(session.token, adminCodeInput.trim())
+                                adminCodeInput = ""
+                            } catch (e: Exception) {
+                                error = friendlyMessage(e)
+                            }
+                        }
+                    },
+                    enabled = adminCodeInput.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Активувати") }
+            }
+        }
+
         if (isAdmin) {
             OutlinedButton(
                 onClick = {
@@ -91,7 +151,7 @@ fun SettingsTab(
                             val code = roomRepository.createRoomInvite(session.token, roomId)
                             codeToShow = "Код для приєднання в кімнату" to code
                         } catch (e: Exception) {
-                            error = e.message
+                            error = friendlyMessage(e)
                         }
                     }
                 },
@@ -107,7 +167,7 @@ fun SettingsTab(
                             val code = authRepository.createAdminInvite(session.token)
                             codeToShow = "Код для видачі адмінки" to code
                         } catch (e: Exception) {
-                            error = e.message
+                            error = friendlyMessage(e)
                         }
                     }
                 },
