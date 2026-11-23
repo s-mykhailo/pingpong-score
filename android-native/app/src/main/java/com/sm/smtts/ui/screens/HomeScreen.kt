@@ -51,6 +51,7 @@ import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.RoomSummary
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.components.SegmentedCodeField
 import com.sm.smtts.ui.theme.LocalDarkTheme
 import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
@@ -348,12 +349,18 @@ private fun JoinRoomDialog(onDismiss: () -> Unit, onJoin: (String) -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text("Приєднатися до кімнати") },
         text = {
-            OutlinedTextField(
-                value = code,
-                onValueChange = { code = it.uppercase() },
-                label = { Text("Код запрошення") },
-                singleLine = true,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    "Код запрошення",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                SegmentedCodeField(
+                    value = code,
+                    onValueChange = { code = it },
+                    codeLength = 10,
+                )
+            }
         },
         confirmButton = {
             TextButton(onClick = { onJoin(code.trim()) }, enabled = code.isNotBlank()) { Text("Приєднатися") }

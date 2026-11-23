@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.sm.smtts.R
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.components.SegmentedCodeField
 import com.sm.smtts.ui.theme.LocalDarkTheme
 import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
@@ -111,11 +112,15 @@ fun AuthScreen(
                             modifier = Modifier.fillMaxWidth(),
                         )
                     } else {
-                        OutlinedTextField(
+                        Text(
+                            "Код відновлення",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        SegmentedCodeField(
                             value = code,
-                            onValueChange = { code = it.uppercase() },
-                            label = { Text("Код відновлення") },
-                            singleLine = true,
+                            onValueChange = { code = it },
+                            codeLength = 14,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
