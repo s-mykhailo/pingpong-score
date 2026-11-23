@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <base target="_top">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #121214;
+      --panel: #1c1c20;
+      --border: #2d2d33;
+      --text: #e7e7ea;
+      --muted: #9a9aa3;
+      --accent: #5b8def;
+      --danger: #e2574c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, Roboto, "Segoe UI", sans-serif;
+      padding: 24px;
+    }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 32px 0 12px; color: var(--muted); }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    input {
+      background: #0f0f11;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 14px;
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button.danger { background: var(--danger); }
+    button.secondary { background: #33333a; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 500; }
+    tr:last-child td { border-bottom: none; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .error { color: var(--danger); margin-top: 8px; font-size: 13px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>SM TTS — Адмінка</h1>
+
+  <div class="panel" id="loginPanel">
+    <div class="row">
+      <input id="masterKeyInput" type="password" placeholder="Master key" style="flex:1; min-width:220px;">
+      <button id="loginBtn">Увійти</button>
+    </div>
+    <div class="error hidden" id="loginError"></div>
+  </div>
+
+  <div id="appPanel" class="hidden">
+    <h2>Юзери</h2>
+    <div class="panel">
+      <div class="row">
+        <input id="userSearch" placeholder="Пошук по нікнейму" style="flex:1; min-width:200px;">
+        <button class="secondary" id="reloadUsersBtn">Оновити</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Нікнейм</th><th>Роль</th><th>Створено</th><th></th></tr>
+        </thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+      <div class="error hidden" id="usersError"></div>
+    </div>
+
+    <h2>Кімнати</h2>
+    <div class="panel">
+      <div class="row">
+        <button class="secondary" id="reloadRoomsBtn">Оновити</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Назва</th><th>Власник</th><th>Створено</th><th></th></tr>
+        </thead>
+        <tbody id="roomsBody"></tbody>
+      </table>
+      <div class="error hidden" id="roomsError"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "<?= apiUrl ?>";
+    const STORAGE_KEY = "smtts_admin_master_key";
+
+    let masterKey = sessionStorage.getItem(STORAGE_KEY) || "";
+    let users = [];
+    let rooms = [];
+
+    const loginPanel = document.getElementById("loginPanel");
+    const appPanel = document.getElementById("appPanel");
+    const masterKeyInput = document.getElementById("masterKeyInput");
+    const loginError = document.getElementById("loginError");
+    const usersBody = document.getElementById("usersBody");
+    const roomsBody = document.getElementById("roomsBody");
+    const usersError = document.getElementById("usersError");
+    const roomsError = document.getElementById("roomsError");
+
+    function showError(el, message) {
+      el.textContent = message;
+      el.classList.remove("hidden");
+    }
+    function hideError(el) {
+      el.classList.add("hidden");
+    }
+
+    async function call(action, payload) {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action, masterKey, ...payload }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "unknown error");
+      return json;
+    }
+
+    function fmtDate(v) {
+      if (!v) return "";
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? String(v) : d.toLocaleString("uk-UA");
+    }
+
+    function renderUsers() {
+      const query = userSearch.value.trim().toLowerCase();
+      const filtered = query ? users.filter(u => u.nickname.toLowerCase().includes(query)) : users;
+      usersBody.innerHTML = "";
+      filtered.forEach(u => {
+        const tr = document.createElement("tr");
+
+        const nickTd = document.createElement("td");
+        const nickInput = document.createElement("input");
+        nickInput.value = u.nickname;
+        nickInput.style.width = "100%";
+        nickTd.appendChild(nickInput);
+
+        const roleTd = document.createElement("td");
+        roleTd.textContent = u.role;
+
+        const dateTd = document.createElement("td");
+        dateTd.className = "muted";
+        dateTd.textContent = fmtDate(u.createdAt);
+
+        const actionsTd = document.createElement("td");
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Зберегти";
+        saveBtn.className = "secondary";
+        saveBtn.onclick = async () => {
+          const newNickname = nickInput.value.trim();
+          if (!newNickname || newNickname === u.nickname) return;
+          hideError(usersError);
+          saveBtn.disabled = true;
+          try {
+            await call("adminRenameUser", { userId: u.id, nickname: newNickname });
+            await loadUsers();
+          } catch (e) {
+            showError(usersError, e.message);
+          } finally {
+            saveBtn.disabled = false;
+          }
+        };
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Видалити";
+        delBtn.className = "danger";
+        delBtn.style.marginLeft = "6px";
+        delBtn.onclick = async () => {
+          if (!confirm(`Видалити акаунт "${u.nickname}"? Нікнейм звільниться, вхід по старому коду відновлення перестане працювати.`)) return;
+          hideError(usersError);
+          delBtn.disabled = true;
+          try {
+            await call("adminDeleteUser", { userId: u.id });
+            await loadUsers();
+          } catch (e) {
+            showError(usersError, e.message);
+            delBtn.disabled = false;
+          }
+        };
+
+        actionsTd.appendChild(saveBtn);
+        actionsTd.appendChild(delBtn);
+
+        tr.appendChild(nickTd);
+        tr.appendChild(roleTd);
+        tr.appendChild(dateTd);
+        tr.appendChild(actionsTd);
+        usersBody.appendChild(tr);
+      });
+    }
+
+    function renderRooms() {
+      roomsBody.innerHTML = "";
+      rooms.forEach(r => {
+        const tr = document.createElement("tr");
+
+        const nameTd = document.createElement("td");
+        nameTd.textContent = r.name;
+
+        const ownerTd = document.createElement("td");
+        ownerTd.textContent = r.ownerNickname;
+
+        const dateTd = document.createElement("td");
+        dateTd.className = "muted";
+        dateTd.textContent = fmtDate(r.createdAt);
+
+        const actionsTd = document.createElement("td");
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Видалити";
+        delBtn.className = "danger";
+        delBtn.onclick = async () => {
+          if (!confirm(`Видалити кімнату "${r.name}" разом з усією статистикою? Це незворотньо.`)) return;
+          hideError(roomsError);
+          delBtn.disabled = true;
+          try {
+            await call("adminDeleteRoom", { roomId: r.id });
+            await loadRooms();
+          } catch (e) {
+            showError(roomsError, e.message);
+            delBtn.disabled = false;
+          }
+        };
+        actionsTd.appendChild(delBtn);
+
+        tr.appendChild(nameTd);
+        tr.appendChild(ownerTd);
+        tr.appendChild(dateTd);
+        tr.appendChild(actionsTd);
+        roomsBody.appendChild(tr);
+      });
+    }
+
+    async function loadUsers() {
+      hideError(usersError);
+      try {
+        const res = await call("adminListUsers", {});
+        users = res.users;
+        renderUsers();
+      } catch (e) {
+        showError(usersError, e.message);
+      }
+    }
+
+    async function loadRooms() {
+      hideError(roomsError);
+      try {
+        const res = await call("adminListRooms", {});
+        rooms = res.rooms;
+        renderRooms();
+      } catch (e) {
+        showError(roomsError, e.message);
+      }
+    }
+
+    async function tryLogin(key) {
+      masterKey = key;
+      hideError(loginError);
+      try {
+        await call("adminListUsers", {});
+        sessionStorage.setItem(STORAGE_KEY, masterKey);
+        loginPanel.classList.add("hidden");
+        appPanel.classList.remove("hidden");
+        await Promise.all([loadUsers(), loadRooms()]);
+      } catch (e) {
+        masterKey = "";
+        sessionStorage.removeItem(STORAGE_KEY);
+        showError(loginError, e.message === "unauthorized" ? "Невірний master key." : e.message);
+      }
+    }
+
+    document.getElementById("loginBtn").onclick = () => tryLogin(masterKeyInput.value.trim());
+    masterKeyInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") tryLogin(masterKeyInput.value.trim());
+    });
+    document.getElementById("reloadUsersBtn").onclick = loadUsers;
+    document.getElementById("reloadRoomsBtn").onclick = loadRooms;
+    const userSearch = document.getElementById("userSearch");
+    userSearch.addEventListener("input", renderUsers);
+
+    if (masterKey) tryLogin(masterKey);
+  </script>
+</body>
+</html>

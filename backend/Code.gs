@@ -58,8 +58,17 @@ function migrateOfficeRoomManual(ownerId) {
   Logger.log('Migrated room ' + office.id + ' -> owner ' + ownerId);
 }
 
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter && e.parameter.page === 'admin') return adminPage_();
   return json_({ ok: true, service: 'pingpong', version: 3 });
+}
+
+function adminPage_() {
+  const t = HtmlService.createTemplateFromFile('Admin');
+  t.apiUrl = ScriptApp.getService().getUrl();
+  return t.evaluate()
+    .setTitle('SM TTS — Адмінка')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
 function doPost(e) {
@@ -90,6 +99,20 @@ function doPost(e) {
     if (body.action === 'createRoomInvite') return json_({ ok: true, ...createRoomInvite_(body.token, body.roomId) });
     if (body.action === 'joinRoom') return json_({ ok: true, ...joinRoom_(body.token, body.code) });
     if (body.action === 'myRooms') return json_({ ok: true, rooms: myRooms_(body.token) });
+
+    // --- адмінська HTML-панель (авторизація master key'єм, не токеном) ---
+    if (body.action === 'adminListUsers') return json_({ ok: true, users: adminListUsers_(body.masterKey) });
+    if (body.action === 'adminRenameUser') return json_({ ok: true, user: adminRenameUser_(body.masterKey, body.userId, body.nickname) });
+    if (body.action === 'adminDeleteUser') {
+      adminDeleteUser_(body.masterKey, body.userId);
+      return json_({ ok: true });
+    }
+    if (body.action === 'adminListRooms') return json_({ ok: true, rooms: adminListRooms_(body.masterKey) });
+    if (body.action === 'adminDeleteRoom') {
+      adminDeleteRoom_(body.masterKey, body.roomId);
+      return json_({ ok: true });
+    }
+
     if (body.action === 'logout') {
       deleteSession_(body.token);
       return json_({ ok: true });
@@ -352,6 +375,106 @@ function markInviteUsed_(id) {
 }
 
 function truthy_(x) { return x === true || x === 'TRUE'; }
+
+function requireMasterKey_(masterKey) {
+  const expected = PropertiesService.getScriptProperties().getProperty('MASTER_KEY');
+  if (!expected || masterKey !== expected) throw new Error('unauthorized');
+}
+
+function adminListUsers_(masterKey) {
+  requireMasterKey_(masterKey);
+  return readRows_(SHEET_USERS, USER_HEADERS).map(u => ({
+    id: String(u.id),
+    nickname: String(u.nickname),
+    role: String(u.role),
+    createdAt: u.createdAt,
+  }));
+}
+
+function adminRenameUser_(masterKey, userId, nickname) {
+  requireMasterKey_(masterKey);
+  nickname = cleanName_(nickname);
+  const taken = readRows_(SHEET_USERS, USER_HEADERS).some(
+    (u) => String(u.id) !== String(userId) && String(u.nickname || '').toLowerCase() === nickname.toLowerCase(),
+  );
+  if (taken) throw new Error('nickname taken');
+
+  const sh = sheet_(SHEET_USERS);
+  const values = sh.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(userId)) {
+      sh.getRange(i + 1, 3).setValue(nickname);
+      CacheService.getScriptCache().remove('u_' + values[i][1]);
+      readRows_(SHEET_MEMBERSHIPS, MEMBERSHIP_HEADERS)
+        .filter((m) => String(m.userId) === String(userId))
+        .forEach((m) => updatePlayerName_(String(m.roomId), String(m.playerId), nickname));
+      return { id: String(userId), nickname };
+    }
+  }
+  throw new Error('user not found');
+}
+
+function adminDeleteUser_(masterKey, userId) {
+  requireMasterKey_(masterKey);
+  const sh = sheet_(SHEET_USERS);
+  const values = sh.getDataRange().getValues();
+  let found = false;
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(userId)) {
+      CacheService.getScriptCache().remove('u_' + values[i][1]);
+      sh.deleteRow(i + 1);
+      found = true;
+      break;
+    }
+  }
+  if (!found) throw new Error('user not found');
+
+  const msh = sheet_(SHEET_MEMBERSHIPS);
+  const mv = msh.getDataRange().getValues();
+  for (let i = mv.length - 1; i >= 1; i--) {
+    if (String(mv[i][0]) === String(userId)) msh.deleteRow(i + 1);
+  }
+}
+
+function adminListRooms_(masterKey) {
+  requireMasterKey_(masterKey);
+  const nicknameById = {};
+  readRows_(SHEET_USERS, USER_HEADERS).forEach((u) => { nicknameById[String(u.id)] = String(u.nickname); });
+  return readRows_(SHEET_ROOMS, ROOM_HEADERS).map((r) => ({
+    id: String(r.id),
+    name: String(r.name),
+    ownerId: String(r.ownerId),
+    ownerNickname: nicknameById[String(r.ownerId)] || '(видалений юзер)',
+    createdAt: r.createdAt,
+  }));
+}
+
+function adminDeleteRoom_(masterKey, roomId) {
+  requireMasterKey_(masterKey);
+  const sh = sheet_(SHEET_ROOMS);
+  const values = sh.getDataRange().getValues();
+  let found = false;
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(roomId)) {
+      sh.deleteRow(i + 1);
+      found = true;
+      break;
+    }
+  }
+  if (!found) throw new Error('room not found');
+
+  const msh = sheet_(SHEET_MEMBERSHIPS);
+  const mv = msh.getDataRange().getValues();
+  for (let i = mv.length - 1; i >= 1; i--) {
+    if (String(mv[i][1]) === String(roomId)) msh.deleteRow(i + 1);
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  ['players', 'matches', 'presets'].forEach((kind) => {
+    const s = ss.getSheetByName(tabName_(roomId, kind));
+    if (s) ss.deleteSheet(s);
+  });
+}
 
 // --- v3: кімнати та членство ---
 
