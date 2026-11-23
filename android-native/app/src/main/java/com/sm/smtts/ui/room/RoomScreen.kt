@@ -1,22 +1,19 @@
 package com.sm.smtts.ui.room
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -24,12 +21,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.MatchRepository
 import com.sm.smtts.data.PendingQueue
@@ -61,6 +61,12 @@ fun RoomScreen(
     )
     var route by remember { mutableStateOf(RoomRoute.TABS) }
     var tab by remember { mutableStateOf(RoomTab.HOME) }
+    val pagerState = rememberPagerState(initialPage = RoomTab.HOME.ordinal) { RoomTab.entries.size }
+    val pagerScope = rememberCoroutineScope()
+
+    LaunchedEffect(pagerState.currentPage) {
+        tab = RoomTab.entries[pagerState.currentPage]
+    }
 
     when (route) {
         RoomRoute.MATCH_SETUP -> MatchSetupScreen(
@@ -82,27 +88,35 @@ fun RoomScreen(
             },
             bottomBar = {
                 NavigationBar {
+                    fun goTo(target: RoomTab) {
+                        pagerScope.launch {
+                            pagerState.animateScrollToPage(
+                                page = target.ordinal,
+                                animationSpec = tween(220),
+                            )
+                        }
+                    }
                     NavigationBarItem(
                         selected = tab == RoomTab.HOME,
-                        onClick = { tab = RoomTab.HOME },
+                        onClick = { goTo(RoomTab.HOME) },
                         icon = { Icon(Icons.Filled.Home, contentDescription = null) },
                         label = { Text(RoomTab.HOME.label) },
                     )
                     NavigationBarItem(
                         selected = tab == RoomTab.STATS,
-                        onClick = { tab = RoomTab.STATS },
+                        onClick = { goTo(RoomTab.STATS) },
                         icon = { Icon(Icons.Filled.BarChart, contentDescription = null) },
                         label = { Text(RoomTab.STATS.label) },
                     )
                     NavigationBarItem(
                         selected = tab == RoomTab.PLAYERS,
-                        onClick = { tab = RoomTab.PLAYERS },
+                        onClick = { goTo(RoomTab.PLAYERS) },
                         icon = { Icon(Icons.Filled.Group, contentDescription = null) },
                         label = { Text(RoomTab.PLAYERS.label) },
                     )
                     NavigationBarItem(
                         selected = tab == RoomTab.SETTINGS,
-                        onClick = { tab = RoomTab.SETTINGS },
+                        onClick = { goTo(RoomTab.SETTINGS) },
                         icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
                         label = { Text(RoomTab.SETTINGS.label) },
                     )
@@ -110,17 +124,11 @@ fun RoomScreen(
             },
         ) { padding ->
             Box(modifier = Modifier.padding(padding)) {
-                AnimatedContent(
-                    targetState = tab,
-                    transitionSpec = {
-                        val forward = targetState.ordinal > initialState.ordinal
-                        val towards = if (forward) 1 else -1
-                        (slideInHorizontally(animationSpec = tween(220)) { width -> towards * width / 4 } + fadeIn(tween(220)))
-                            .togetherWith(slideOutHorizontally(animationSpec = tween(220)) { width -> -towards * width / 4 } + fadeOut(tween(140)))
-                    },
-                    label = "room-tab",
-                ) { targetTab ->
-                    when (targetTab) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                ) { page ->
+                    when (RoomTab.entries[page]) {
                         RoomTab.HOME -> RoomHomeTab(
                             vm = vm,
                             roomName = roomName,
