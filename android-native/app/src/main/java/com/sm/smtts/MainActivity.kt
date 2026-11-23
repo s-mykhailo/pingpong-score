@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
                     roomRepository = app.roomRepository,
                     matchRepository = app.matchRepository,
                     pendingQueue = app.pendingQueue,
+                    pendingRoomQueue = app.pendingRoomQueue,
                     themeStore = app.themeStore,
                 )
             }

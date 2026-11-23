@@ -4,6 +4,7 @@ import android.app.Application
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.MatchRepository
 import com.sm.smtts.data.PendingQueue
+import com.sm.smtts.data.PendingRoomQueue
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.SessionStore
 import com.sm.smtts.data.ThemeStore
@@ -19,6 +20,8 @@ class SmttsApp : Application() {
         private set
     lateinit var pendingQueue: PendingQueue
         private set
+    lateinit var pendingRoomQueue: PendingRoomQueue
+        private set
     lateinit var themeStore: ThemeStore
         private set
 
@@ -29,6 +32,7 @@ class SmttsApp : Application() {
         roomRepository = RoomRepository(this)
         matchRepository = MatchRepository()
         pendingQueue = PendingQueue(this)
+        pendingRoomQueue = PendingRoomQueue(this)
         themeStore = ThemeStore(this)
     }
 }

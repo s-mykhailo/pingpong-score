@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,6 +42,7 @@ import com.sm.smtts.data.Session
 import com.sm.smtts.data.ThemeMode
 import com.sm.smtts.data.ThemeStore
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
 
 /** Full-screen wrapper around [AccountSettings], reachable from the room list (no room required). */
@@ -113,7 +115,10 @@ fun AccountSettings(
     var codeToShow by remember { mutableStateOf<Pair<String, String>?>(null) } // title to code
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Card(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = SmttsElevation.card),
+        ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(session.user.nickname, style = MaterialTheme.typography.titleMedium)
                 Text(roleLabel(session.user.role), color = MaterialTheme.colorScheme.onSurfaceVariant)

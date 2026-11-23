@@ -87,6 +87,32 @@ export function computeHeadToHead(matches: Match[], playerA: string, playerB: st
   return { aWins, bWins, matches: between };
 }
 
+export interface MvpEntry {
+  playerId: string;
+  wins: number;
+  matchesPlayed: number;
+}
+
+export function computeMvp(matches: Match[], sinceMs: number | null): MvpEntry | null {
+  const winsByPlayer = new Map<string, number>();
+  const playedByPlayer = new Map<string, number>();
+
+  for (const m of matches) {
+    if (sinceMs !== null && new Date(m.playedAt).getTime() < sinceMs) continue;
+    playedByPlayer.set(m.player1, (playedByPlayer.get(m.player1) ?? 0) + 1);
+    playedByPlayer.set(m.player2, (playedByPlayer.get(m.player2) ?? 0) + 1);
+    winsByPlayer.set(m.winner, (winsByPlayer.get(m.winner) ?? 0) + 1);
+  }
+
+  let best: MvpEntry | null = null;
+  for (const [playerId, wins] of winsByPlayer) {
+    if (!best || wins > best.wins) {
+      best = { playerId, wins, matchesPlayed: playedByPlayer.get(playerId) ?? 0 };
+    }
+  }
+  return best;
+}
+
 export function playerName(players: Player[], id: string): string {
   return players.find((p) => p.id === id)?.name ?? '?';
 }

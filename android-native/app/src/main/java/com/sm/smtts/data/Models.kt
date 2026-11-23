@@ -43,6 +43,43 @@ data class RoomSummary(
     }
 }
 
+/** A createRoom request queued locally while it hasn't reached the server yet. */
+data class PendingRoomCreate(
+    val localId: String,
+    val name: String,
+) {
+    fun toJson(): JSONObject = JSONObject().apply {
+        put("localId", localId)
+        put("name", name)
+    }
+
+    companion object {
+        fun fromJson(o: JSONObject) = PendingRoomCreate(
+            localId = o.getString("localId"),
+            name = o.getString("name"),
+        )
+    }
+}
+
+/** A joinRoom request queued locally while it hasn't reached the server yet — the real
+ *  room id/name are only known once the server validates the invite code. */
+data class PendingRoomJoin(
+    val localId: String,
+    val code: String,
+) {
+    fun toJson(): JSONObject = JSONObject().apply {
+        put("localId", localId)
+        put("code", code)
+    }
+
+    companion object {
+        fun fromJson(o: JSONObject) = PendingRoomJoin(
+            localId = o.getString("localId"),
+            code = o.getString("code"),
+        )
+    }
+}
+
 data class Player(
     val id: String,
     val name: String,

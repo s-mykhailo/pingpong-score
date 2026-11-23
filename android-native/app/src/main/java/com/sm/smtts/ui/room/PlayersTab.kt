@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,9 +27,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.sm.smtts.data.Player
 import com.sm.smtts.data.StatsEngine
+import com.sm.smtts.ui.theme.SmttsElevation
 
 @Composable
 fun PlayersTab(vm: RoomViewModel, isAdmin: Boolean) {
@@ -74,17 +79,27 @@ fun PlayersTab(vm: RoomViewModel, isAdmin: Boolean) {
 @Composable
 private fun PlayerRow(player: Player, matches: List<com.sm.smtts.data.Match>, isAdmin: Boolean, onDelete: () -> Unit) {
     val stats = StatsEngine.computePlayerStats(matches, player.id)
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = SmttsElevation.card),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val winColor = MaterialTheme.colorScheme.primary
+            val lossColor = MaterialTheme.colorScheme.error
+            val mutedColor = MaterialTheme.colorScheme.onSurfaceVariant
             Column {
                 Text(player.name, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "${stats.wins}П / ${stats.losses}П · ${(stats.winRate * 100).toInt()}%",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(color = winColor)) { append("${stats.wins}W") }
+                        append(" / ")
+                        withStyle(SpanStyle(color = lossColor)) { append("${stats.losses}L") }
+                        withStyle(SpanStyle(color = mutedColor)) { append(" · ${(stats.winRate * 100).toInt()}%") }
+                    },
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

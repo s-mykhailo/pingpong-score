@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -40,18 +41,26 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.sm.smtts.R
+import com.sm.smtts.data.ApiException
 import com.sm.smtts.data.AuthRepository
+import com.sm.smtts.data.NetworkException
+import com.sm.smtts.data.PendingRoomCreate
+import com.sm.smtts.data.PendingRoomJoin
+import com.sm.smtts.data.PendingRoomQueue
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.RoomSummary
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.friendlyMessage
 import com.sm.smtts.ui.theme.LocalDarkTheme
+import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 @Composable
 fun HomeScreen(
     session: Session,
     roomRepository: RoomRepository,
+    pendingRoomQueue: PendingRoomQueue,
     authRepository: AuthRepository,
     onOpenRoom: (RoomSummary) -> Unit,
     onOpenSettings: () -> Unit,
@@ -59,11 +68,15 @@ fun HomeScreen(
 ) {
     val scope = rememberCoroutineScope()
     var rooms by remember { mutableStateOf<List<RoomSummary>>(emptyList()) }
+    var pendingCreates by remember { mutableStateOf<List<PendingRoomCreate>>(emptyList()) }
+    var pendingJoins by remember { mutableStateOf<List<PendingRoomJoin>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var showJoinDialog by remember { mutableStateOf(false) }
     var showCreateDialog by remember { mutableStateOf(false) }
     val canCreateRooms = session.user.role == "admin" || session.user.role == "masterkey"
+    val hasContent = rooms.isNotEmpty() || pendingCreates.isNotEmpty() || pendingJoins.isNotEmpty()
+    var syncingRooms by remember { mutableStateOf(false) }
 
     fun reload(showSpinner: Boolean = true) {
         if (showSpinner) loading = true
@@ -80,6 +93,47 @@ fun HomeScreen(
         }
     }
 
+    /** Намагається дотягнути до серверу createRoom/joinRoom, що були створені офлайн або
+     *  просто не блокуючи UI. Запити, відхилені сервером назавжди (ApiException), видаляються
+     *  з черги з повідомленням про помилку; мережеві - лишаються і повторяться наступного разу. */
+    fun syncPendingRooms() {
+        if (syncingRooms) return
+        syncingRooms = true
+        scope.launch {
+            try {
+                for (item in pendingRoomQueue.getCreates(session.token)) {
+                    try {
+                        roomRepository.createRoom(session.token, item.name)
+                        pendingRoomQueue.removeCreate(session.token, item.localId)
+                        pendingCreates = pendingCreates.filter { it.localId != item.localId }
+                    } catch (e: NetworkException) {
+                        break
+                    } catch (e: ApiException) {
+                        pendingRoomQueue.removeCreate(session.token, item.localId)
+                        pendingCreates = pendingCreates.filter { it.localId != item.localId }
+                        error = friendlyMessage(e)
+                    }
+                }
+                for (item in pendingRoomQueue.getJoins(session.token)) {
+                    try {
+                        roomRepository.joinRoom(session.token, item.code)
+                        pendingRoomQueue.removeJoin(session.token, item.localId)
+                        pendingJoins = pendingJoins.filter { it.localId != item.localId }
+                    } catch (e: NetworkException) {
+                        break
+                    } catch (e: ApiException) {
+                        pendingRoomQueue.removeJoin(session.token, item.localId)
+                        pendingJoins = pendingJoins.filter { it.localId != item.localId }
+                        error = friendlyMessage(e)
+                    }
+                }
+            } finally {
+                syncingRooms = false
+            }
+            reload(showSpinner = false)
+        }
+    }
+
     LaunchedEffect(session.token) {
         val cached = roomRepository.cachedRooms(session.token)
         if (cached.isNotEmpty()) {
@@ -89,6 +143,9 @@ fun HomeScreen(
         } else {
             reload(showSpinner = true)
         }
+        pendingCreates = pendingRoomQueue.getCreates(session.token)
+        pendingJoins = pendingRoomQueue.getJoins(session.token)
+        syncPendingRooms()
     }
 
     Scaffold(
@@ -145,14 +202,23 @@ fun HomeScreen(
                     }
                 }
 
+                if (error != null && hasContent) {
+                    Text(
+                        error ?: "",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
+
                 when {
                     loading -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                         CircularProgressIndicator()
                     }
-                    error != null -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    error != null && !hasContent -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                         Text(error ?: "", color = MaterialTheme.colorScheme.error)
                     }
-                    rooms.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    !hasContent -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                         Text(
                             "Ще немає кімнат. Приєднайся за кодом.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -163,6 +229,8 @@ fun HomeScreen(
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
+                        items(pendingCreates) { item -> PendingRoomCard(title = item.name, status = "Створюється…") }
+                        items(pendingJoins) { item -> PendingRoomCard(title = "Приєднання…", status = "Код: ${item.code}") }
                         items(rooms) { room -> RoomCard(room, onClick = { onOpenRoom(room) }) }
                     }
                 }
@@ -174,14 +242,15 @@ fun HomeScreen(
         JoinRoomDialog(
             onDismiss = { showJoinDialog = false },
             onJoin = { code ->
+                showJoinDialog = false
+                // id/назва кімнати відомі лише після валідації коду на сервері - показуємо
+                // плейсхолдер "Приєднання..." і дотягуємо його в фоні, а не тримаємо діалог
+                // відкритим на весь запит.
+                val item = PendingRoomJoin(localId = UUID.randomUUID().toString(), code = code)
+                pendingJoins = pendingJoins + item
                 scope.launch {
-                    try {
-                        roomRepository.joinRoom(session.token, code)
-                        showJoinDialog = false
-                        reload()
-                    } catch (e: Exception) {
-                        error = friendlyMessage(e)
-                    }
+                    pendingRoomQueue.addJoin(session.token, item)
+                    syncPendingRooms()
                 }
             },
         )
@@ -192,16 +261,36 @@ fun HomeScreen(
             onDismiss = { showCreateDialog = false },
             onCreate = { name ->
                 showCreateDialog = false
+                // Назва вже відома локально - показуємо кімнату одразу, реальний id підʼїде
+                // після відповіді сервера (фоновий синк), діалог не чекає мережі.
+                val item = PendingRoomCreate(localId = UUID.randomUUID().toString(), name = name)
+                pendingCreates = pendingCreates + item
                 scope.launch {
-                    try {
-                        roomRepository.createRoom(session.token, name)
-                        reload()
-                    } catch (e: Exception) {
-                        error = friendlyMessage(e)
-                    }
+                    pendingRoomQueue.addCreate(session.token, item)
+                    syncPendingRooms()
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun PendingRoomCard(title: String, status: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = SmttsElevation.card),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            Column {
+                Text(title, style = MaterialTheme.typography.titleLarge)
+                Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+        }
     }
 }
 
@@ -210,6 +299,7 @@ private fun RoomCard(room: RoomSummary, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = SmttsElevation.card),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(room.name, style = MaterialTheme.typography.titleLarge)
