@@ -29,6 +29,7 @@ import androidx.navigation.compose.rememberNavController
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.MatchRepository
 import com.sm.smtts.data.PendingQueue
+import com.sm.smtts.data.PendingRoomQueue
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.RoomSummary
 import com.sm.smtts.data.SessionStore
@@ -51,6 +52,7 @@ fun SmttsNavHost(
     roomRepository: RoomRepository,
     matchRepository: MatchRepository,
     pendingQueue: PendingQueue,
+    pendingRoomQueue: PendingRoomQueue,
     themeStore: ThemeStore,
 ) {
     val navController = rememberNavController()
@@ -114,6 +116,7 @@ fun SmttsNavHost(
                     HomeScreen(
                         session = current,
                         roomRepository = roomRepository,
+                        pendingRoomQueue = pendingRoomQueue,
                         authRepository = authRepository,
                         onOpenRoom = { selectedRoom = it },
                         onOpenSettings = { showAccountSettings = true },
