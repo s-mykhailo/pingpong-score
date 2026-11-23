@@ -1,7 +1,10 @@
 import { renderShell } from './shell';
 import { getData, subscribe, mergePlayer, removePlayerLocal } from '../store';
 import { addPlayer, deletePlayer, getSession, NetworkError } from '../api/client';
-import { computePlayerStats } from '../stats/compute';
+import { computePlayerStats, computeMvp, playerName, type MvpEntry } from '../stats/compute';
+import type { Player } from '../types';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function render(root: HTMLElement): () => void {
   let newName = '';
@@ -13,6 +16,10 @@ export function render(root: HTMLElement): () => void {
       const players = data?.players ?? [];
       const matches = data?.matches ?? [];
       const isAdmin = getSession()?.role === 'admin';
+      const now = Date.now();
+      const mvpWeek = computeMvp(matches, now - 7 * DAY_MS);
+      const mvpMonth = computeMvp(matches, now - 30 * DAY_MS);
+      const mvpAllTime = computeMvp(matches, null);
 
       content.innerHTML = `
         <div class="md-typescale-headline-small">Гравці</div>
@@ -22,6 +29,8 @@ export function render(root: HTMLElement): () => void {
           <md-filled-button id="add-btn"><md-icon slot="icon">add</md-icon>Додати</md-filled-button>
         </div>
         ${error ? `<div class="md-typescale-body-medium" style="color:var(--md-sys-color-error)">${error}</div>` : ''}
+
+        ${players.length > 0 ? renderMvpSection(players, mvpWeek, mvpMonth, mvpAllTime) : ''}
 
         <div class="col">
           ${
@@ -34,7 +43,7 @@ export function render(root: HTMLElement): () => void {
                 <div class="card row-between">
                   <div class="col">
                     <div class="md-typescale-title-medium">${escapeHtml(p.name)}</div>
-                    <div class="muted md-typescale-body-small">${s.wins}П / ${s.losses}П · ${Math.round(s.winRate * 100)}%</div>
+                    <div class="muted md-typescale-body-small">${s.wins}W / ${s.losses}L · ${Math.round(s.winRate * 100)}%</div>
                   </div>
                   ${isAdmin ? `<md-icon-button data-id="${p.id}" class="delete-btn"><md-icon>delete</md-icon></md-icon-button>` : ''}
                 </div>`;
@@ -82,6 +91,35 @@ export function render(root: HTMLElement): () => void {
     draw();
     return subscribe(draw);
   });
+}
+
+function renderMvpSection(
+  players: Player[],
+  mvpWeek: MvpEntry | null,
+  mvpMonth: MvpEntry | null,
+  mvpAllTime: MvpEntry | null,
+): string {
+  const card = (label: string, icon: string, mvp: MvpEntry | null) => `
+    <div class="card col fill">
+      <div class="row-between">
+        <div class="muted md-typescale-label-medium">${label}</div>
+        <md-icon>${icon}</md-icon>
+      </div>
+      ${
+        mvp
+          ? `<div class="md-typescale-title-medium">${escapeHtml(playerName(players, mvp.playerId))}</div>
+             <div class="muted md-typescale-body-small">${mvp.wins}W / ${mvp.matchesPlayed - mvp.wins}L</div>`
+          : `<div class="muted md-typescale-body-medium">—</div>`
+      }
+    </div>`;
+
+  return `
+    <div class="row">
+      ${card('MVP тижня', 'military_tech', mvpWeek)}
+      ${card('MVP місяця', 'emoji_events', mvpMonth)}
+      ${card('MVP усіх часів', 'workspace_premium', mvpAllTime)}
+    </div>
+  `;
 }
 
 function escapeHtml(s: string): string {

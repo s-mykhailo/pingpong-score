@@ -64,4 +64,37 @@ object StatsEngine {
     fun playerName(players: List<Player>, id: String): String = players.find { it.id == id }?.name ?: "?"
 
     fun sortedMatchHistory(matches: List<Match>): List<Match> = matches.sortedByDescending { it.playedAt }
+
+    fun computeMvp(matches: List<Match>, sinceMs: Long?): MvpEntry? {
+        val winsByPlayer = mutableMapOf<String, Int>()
+        val playedByPlayer = mutableMapOf<String, Int>()
+
+        for (m in matches) {
+            if (sinceMs != null) {
+                val playedAtMs = try {
+                    java.time.Instant.parse(m.playedAt).toEpochMilli()
+                } catch (e: Exception) {
+                    null
+                }
+                if (playedAtMs == null || playedAtMs < sinceMs) continue
+            }
+            playedByPlayer[m.player1] = (playedByPlayer[m.player1] ?: 0) + 1
+            playedByPlayer[m.player2] = (playedByPlayer[m.player2] ?: 0) + 1
+            winsByPlayer[m.winner] = (winsByPlayer[m.winner] ?: 0) + 1
+        }
+
+        var best: MvpEntry? = null
+        for ((playerId, wins) in winsByPlayer) {
+            if (best == null || wins > best.wins) {
+                best = MvpEntry(playerId = playerId, wins = wins, matchesPlayed = playedByPlayer[playerId] ?: 0)
+            }
+        }
+        return best
+    }
 }
+
+data class MvpEntry(
+    val playerId: String,
+    val wins: Int,
+    val matchesPlayed: Int,
+)
