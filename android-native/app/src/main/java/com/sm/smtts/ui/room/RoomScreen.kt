@@ -128,12 +128,17 @@ fun RoomScreen(
                             onResumeMatch = { route = RoomRoute.SCOREBOARD },
                         )
                         RoomTab.STATS -> StatsTab(vm)
-                        RoomTab.PLAYERS -> PlayersTab(vm, isAdmin)
+                        RoomTab.PLAYERS -> PlayersTab(
+                            vm = vm,
+                            isAdmin = isAdmin,
+                            session = session,
+                            roomId = roomId,
+                            roomRepository = roomRepository,
+                        )
                         RoomTab.SETTINGS -> SettingsTab(
                             session = session,
                             roomId = roomId,
                             isAdmin = isAdmin,
-                            roomRepository = roomRepository,
                             authRepository = authRepository,
                             themeStore = themeStore,
                             onLoggedOut = onLoggedOut,
