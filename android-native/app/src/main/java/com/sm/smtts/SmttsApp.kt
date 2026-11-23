@@ -26,7 +26,7 @@ class SmttsApp : Application() {
         super.onCreate()
         sessionStore = SessionStore(this)
         authRepository = AuthRepository(sessionStore)
-        roomRepository = RoomRepository()
+        roomRepository = RoomRepository(this)
         matchRepository = MatchRepository()
         pendingQueue = PendingQueue(this)
         themeStore = ThemeStore(this)

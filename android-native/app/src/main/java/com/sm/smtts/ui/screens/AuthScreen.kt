@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.sm.smtts.R
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.theme.LocalDarkTheme
 import kotlinx.coroutines.launch
 
 @Composable
@@ -51,9 +52,10 @@ fun AuthScreen(
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
+    val darkTheme = LocalDarkTheme.current
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(R.drawable.home_wallpaper),
+            painter = painterResource(if (darkTheme) R.drawable.home_wallpaper_dark else R.drawable.home_wallpaper_light),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,

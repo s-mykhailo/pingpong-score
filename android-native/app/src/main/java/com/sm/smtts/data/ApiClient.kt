@@ -8,6 +8,8 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeUnit
 
 private const val BACKEND_URL =
     "https://script.google.com/macros/s/AKfycbxi_WfYMsZnjewkr4poOwbKzA-wHPOYvsJsv_5tIMrTE1eAMmiEYCIIjgtqFPGBhl9VOA/exec"
@@ -16,7 +18,7 @@ private const val BACKEND_URL =
 class ApiException(message: String) : Exception(message)
 
 /** The request never reached the server (offline, DNS, timeout). Safe to retry later. */
-class NetworkException(cause: Throwable) : Exception(cause)
+class NetworkException(cause: Throwable, val isTimeout: Boolean = false) : Exception(cause)
 
 private val KNOWN_API_ERRORS = mapOf(
     "nickname taken" to "Такий нікнейм вже зайнятий, вибери інший.",
@@ -27,13 +29,22 @@ private val KNOWN_API_ERRORS = mapOf(
 )
 
 fun friendlyMessage(e: Throwable): String = when (e) {
-    is NetworkException -> "Немає інтернету. Перевірте з'єднання і спробуйте ще раз."
+    is NetworkException -> if (e.isTimeout) {
+        "Сервер довго відповідає. Спробуйте ще раз за хвилину."
+    } else {
+        "Немає інтернету. Перевірте з'єднання і спробуйте ще раз."
+    }
     is ApiException -> KNOWN_API_ERRORS[e.message] ?: e.message ?: "Сервер відхилив запит."
     else -> "Щось пішло не так."
 }
 
 object ApiClient {
-    private val client = OkHttpClient.Builder().followRedirects(true).build()
+    private val client = OkHttpClient.Builder()
+        .followRedirects(true)
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .writeTimeout(15, TimeUnit.SECONDS)
+        .build()
     private val plainText = "text/plain".toMediaType()
 
     suspend fun call(
@@ -58,6 +69,8 @@ object ApiClient {
             .build()
         val response = try {
             client.newCall(request).execute()
+        } catch (e: SocketTimeoutException) {
+            throw NetworkException(e, isTimeout = true)
         } catch (e: IOException) {
             throw NetworkException(e)
         }

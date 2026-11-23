@@ -28,6 +28,12 @@ data class RoomSummary(
     val name: String,
     val isAdmin: Boolean,
 ) {
+    fun toJson(): JSONObject = JSONObject().apply {
+        put("id", id)
+        put("name", name)
+        put("isAdmin", isAdmin)
+    }
+
     companion object {
         fun fromJson(o: JSONObject) = RoomSummary(
             id = o.getString("id"),

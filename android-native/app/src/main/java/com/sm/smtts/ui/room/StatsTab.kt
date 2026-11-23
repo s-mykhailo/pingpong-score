@@ -15,6 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.dp
 import com.sm.smtts.data.PlayerStats
 import com.sm.smtts.data.StatsEngine
@@ -50,10 +53,21 @@ private fun StatsRow(name: String, s: PlayerStats) {
                 Text(name, style = MaterialTheme.typography.titleMedium)
                 Text("${(s.winRate * 100).toInt()}%", style = MaterialTheme.typography.titleMedium)
             }
+            val winColor = MaterialTheme.colorScheme.primary
+            val lossColor = MaterialTheme.colorScheme.error
+            val mutedColor = MaterialTheme.colorScheme.onSurfaceVariant
             Text(
-                "${s.wins}П / ${s.losses}П · сети ${s.setsWon}:${s.setsLost}" +
-                    if (s.currentStreak != 0) " · серія ${if (s.currentStreak > 0) "+${s.currentStreak}" else s.currentStreak}" else "",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                buildAnnotatedString {
+                    withStyle(SpanStyle(color = winColor)) { append("${s.wins}W") }
+                    append(" / ")
+                    withStyle(SpanStyle(color = lossColor)) { append("${s.losses}L") }
+                    withStyle(SpanStyle(color = mutedColor)) {
+                        append(" · сети ${s.setsWon}:${s.setsLost}")
+                        if (s.currentStreak != 0) {
+                            append(" · серія ${if (s.currentStreak > 0) "+${s.currentStreak}" else s.currentStreak}")
+                        }
+                    }
+                },
                 style = MaterialTheme.typography.bodyMedium,
             )
         }

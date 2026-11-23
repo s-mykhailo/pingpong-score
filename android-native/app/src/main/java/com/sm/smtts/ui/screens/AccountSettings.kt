@@ -250,7 +250,7 @@ fun AccountSettings(
 }
 
 internal fun roleLabel(role: String) = when (role) {
-    "masterkey" -> "Мастерки"
-    "admin" -> "Адмін"
-    else -> "Гравець"
+    "masterkey" -> "Master"
+    "admin" -> "Admin"
+    else -> "User"
 }

@@ -79,9 +79,12 @@ function doPost(e) {
     return json_({ ok: false, error: 'bad json' });
   }
 
-  const lock = LockService.getScriptLock();
+  // Лок потрібен лише для дій, що пишуть у таблиці — читання (me/myRooms/getAll/adminList*)
+  // не повинні чекати на чужі записи й одне одного.
+  const READ_ONLY_ACTIONS = ['me', 'myRooms', 'getAll', 'adminListUsers', 'adminListRooms', 'recoverAccount'];
+  const lock = READ_ONLY_ACTIONS.indexOf(body.action) === -1 ? LockService.getScriptLock() : null;
   try {
-    lock.waitLock(10000);
+    if (lock) lock.waitLock(10000);
     ensureV3Sheets_();
 
     if (body.action === 'createGroup') return json_({ ok: true, ...createGroup_(body.masterKey, body.name) });
@@ -154,7 +157,7 @@ function doPost(e) {
   } catch (err) {
     return json_({ ok: false, error: String(err.message || err) });
   } finally {
-    try { lock.releaseLock(); } catch (_) {}
+    if (lock) { try { lock.releaseLock(); } catch (_) {} }
   }
 }
 
@@ -568,12 +571,16 @@ function joinRoom_(token, rawCode) {
 
 function myRooms_(token) {
   const u = requireUser_(token);
+  // Один прохід по Rooms замість повного readRows_(SHEET_ROOMS) на кожну кімнату користувача.
+  const roomsById = {};
+  readRows_(SHEET_ROOMS, ROOM_HEADERS).forEach(r => {
+    roomsById[String(r.id)] = { id: String(r.id), name: String(r.name), ownerId: String(r.ownerId) };
+  });
   return readRows_(SHEET_MEMBERSHIPS, MEMBERSHIP_HEADERS)
     .filter(m => String(m.userId) === u.id)
-    .map(m => {
-      const room = roomById_(String(m.roomId));
-      return { id: room.id, name: room.name, isAdmin: u.role === 'masterkey' || u.role === 'admin' || room.ownerId === u.id };
-    });
+    .map(m => roomsById[String(m.roomId)])
+    .filter(Boolean)
+    .map(room => ({ id: room.id, name: room.name, isAdmin: u.role === 'masterkey' || u.role === 'admin' || room.ownerId === u.id }));
 }
 
 function resolveActor_(token, roomId) {

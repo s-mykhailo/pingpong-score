@@ -45,6 +45,7 @@ import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.RoomSummary
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.theme.LocalDarkTheme
 import kotlinx.coroutines.launch
 
 @Composable
@@ -64,21 +65,31 @@ fun HomeScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     val canCreateRooms = session.user.role == "admin" || session.user.role == "masterkey"
 
-    fun reload() {
-        loading = true
+    fun reload(showSpinner: Boolean = true) {
+        if (showSpinner) loading = true
         scope.launch {
             try {
                 rooms = roomRepository.myRooms(session.token)
                 error = null
             } catch (e: Exception) {
-                error = friendlyMessage(e)
+                // Якщо вже показуємо старий кеш - не затирати його помилкою, спробуємо пізніше.
+                if (rooms.isEmpty()) error = friendlyMessage(e)
             } finally {
                 loading = false
             }
         }
     }
 
-    LaunchedEffect(session.token) { reload() }
+    LaunchedEffect(session.token) {
+        val cached = roomRepository.cachedRooms(session.token)
+        if (cached.isNotEmpty()) {
+            rooms = cached
+            loading = false
+            reload(showSpinner = false)
+        } else {
+            reload(showSpinner = true)
+        }
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -94,9 +105,10 @@ fun HomeScreen(
             }
         },
     ) { padding ->
+        val darkTheme = LocalDarkTheme.current
         Box(modifier = Modifier.fillMaxSize()) {
             Image(
-                painter = painterResource(R.drawable.home_wallpaper),
+                painter = painterResource(if (darkTheme) R.drawable.home_wallpaper_dark else R.drawable.home_wallpaper_light),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
@@ -179,10 +191,10 @@ fun HomeScreen(
         CreateRoomDialog(
             onDismiss = { showCreateDialog = false },
             onCreate = { name ->
+                showCreateDialog = false
                 scope.launch {
                     try {
                         roomRepository.createRoom(session.token, name)
-                        showCreateDialog = false
                         reload()
                     } catch (e: Exception) {
                         error = friendlyMessage(e)
@@ -211,6 +223,7 @@ private fun RoomCard(room: RoomSummary, onClick: () -> Unit) {
 @Composable
 private fun CreateRoomDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) {
     var name by remember { mutableStateOf("") }
+    var creating by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Нова кімната") },
@@ -220,13 +233,20 @@ private fun CreateRoomDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) 
                 onValueChange = { name = it },
                 label = { Text("Назва кімнати") },
                 singleLine = true,
+                enabled = !creating,
             )
         },
         confirmButton = {
-            TextButton(onClick = { onCreate(name.trim()) }, enabled = name.isNotBlank()) { Text("Створити") }
+            TextButton(
+                onClick = {
+                    creating = true
+                    onCreate(name.trim())
+                },
+                enabled = !creating && name.isNotBlank(),
+            ) { Text("Створити") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Скасувати") }
+            TextButton(onClick = onDismiss, enabled = !creating) { Text("Скасувати") }
         },
     )
 }

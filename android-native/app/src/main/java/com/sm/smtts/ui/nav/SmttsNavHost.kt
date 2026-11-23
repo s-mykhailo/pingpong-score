@@ -1,9 +1,14 @@
 package com.sm.smtts.ui.nav
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -14,6 +19,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.compose.NavHost
@@ -101,6 +108,7 @@ fun SmttsNavHost(
                             selectedRoom = null
                             navController.navigate(Routes.AUTH) { popUpTo(Routes.HOME) { inclusive = true } }
                         },
+                        onExitToRoomList = { selectedRoom = null },
                     )
                 } else {
                     HomeScreen(
@@ -124,11 +132,17 @@ fun SmttsNavHost(
             properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
             title = { Text("Збережи код відновлення") },
             text = {
+                val clipboardManager = LocalClipboardManager.current
                 androidx.compose.foundation.layout.Column {
                     Text("Цей код показується один раз. Він потрібен, щоб увійти в акаунт з іншого пристрою.")
                     androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
-                    SelectionContainer {
-                        Text(code, style = androidx.compose.material3.MaterialTheme.typography.headlineSmall)
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        SelectionContainer {
+                            Text(code, style = androidx.compose.material3.MaterialTheme.typography.headlineSmall)
+                        }
+                        IconButton(onClick = { clipboardManager.setText(AnnotatedString(code)) }) {
+                            Icon(Icons.Filled.ContentCopy, contentDescription = "Копіювати код")
+                        }
                     }
                 }
             },
