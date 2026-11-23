@@ -14,6 +14,7 @@ import com.sm.smtts.data.Player
 import com.sm.smtts.data.Preset
 import com.sm.smtts.data.Rules
 import com.sm.smtts.data.RoomData
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,8 +66,8 @@ class RoomViewModel(
         }
     }
 
-    fun refresh() {
-        viewModelScope.launch {
+    fun refresh(): Job {
+        return viewModelScope.launch {
             try {
                 _data.value = matchRepository.getAll(token, roomId)
             } catch (_: Exception) {
