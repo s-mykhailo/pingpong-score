@@ -1,5 +1,7 @@
 package com.sm.smtts.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.contentColorFor
@@ -38,11 +41,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.sm.smtts.BuildConfig
 import com.sm.smtts.R
 import com.sm.smtts.data.ApiException
 import com.sm.smtts.data.AuthRepository
+import com.sm.smtts.data.AvailableUpdate
 import com.sm.smtts.data.NetworkException
 import com.sm.smtts.data.PendingRoomCreate
 import com.sm.smtts.data.PendingRoomJoin
@@ -50,6 +56,7 @@ import com.sm.smtts.data.PendingRoomQueue
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.RoomSummary
 import com.sm.smtts.data.Session
+import com.sm.smtts.data.UpdateChecker
 import com.sm.smtts.data.friendlyMessage
 import com.sm.smtts.ui.theme.LocalDarkTheme
 import com.sm.smtts.ui.theme.SmttsElevation
@@ -67,6 +74,8 @@ fun HomeScreen(
     onLoggedOut: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var availableUpdate by remember { mutableStateOf<AvailableUpdate?>(null) }
     var rooms by remember { mutableStateOf<List<RoomSummary>>(emptyList()) }
     var pendingCreates by remember { mutableStateOf<List<PendingRoomCreate>>(emptyList()) }
     var pendingJoins by remember { mutableStateOf<List<PendingRoomJoin>>(emptyList()) }
@@ -146,9 +155,25 @@ fun HomeScreen(
         pendingCreates = pendingRoomQueue.getCreates(session.token)
         pendingJoins = pendingRoomQueue.getJoins(session.token)
         syncPendingRooms()
+        availableUpdate = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME)
     }
 
     Scaffold(
+        snackbarHost = {
+            val update = availableUpdate
+            if (update != null) {
+                Snackbar(
+                    action = {
+                        TextButton(onClick = {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(update.url)))
+                        }) { Text("Відкрити") }
+                    },
+                    dismissAction = {
+                        TextButton(onClick = { availableUpdate = null }) { Text("Закрити") }
+                    },
+                ) { Text("Доступна нова версія ${update.version}") }
+            }
+        },
         floatingActionButton = {
             Column(horizontalAlignment = androidx.compose.ui.Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (canCreateRooms) {
