@@ -42,6 +42,7 @@ import com.sm.smtts.data.Session
 import com.sm.smtts.data.ThemeMode
 import com.sm.smtts.data.ThemeStore
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.components.SegmentedCodeField
 import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
 
@@ -187,11 +188,15 @@ fun AccountSettings(
         if (session.user.role == "user") {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Активувати адмінку", style = MaterialTheme.typography.titleMedium)
-                OutlinedTextField(
+                Text(
+                    "Код від мастер-кея",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                SegmentedCodeField(
                     value = adminCodeInput,
-                    onValueChange = { adminCodeInput = it.uppercase() },
-                    label = { Text("Код від мастер-кея") },
-                    singleLine = true,
+                    onValueChange = { adminCodeInput = it },
+                    codeLength = 10,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Button(
