@@ -2,12 +2,14 @@ import './style.css';
 import './components';
 import { registerSW } from 'virtual:pwa-register';
 import { applyCurrentTheme } from './theme/theme';
+import { initTopoBackground } from './theme/topoBackground';
 import { initRouter } from './router';
 import { initSync } from './offline/sync';
 import { loadInitial } from './store';
 import { loadLiveMatch } from './match/liveMatch';
 
 applyCurrentTheme();
+initTopoBackground();
 
 const root = document.getElementById('app')!;
 initRouter(root);
