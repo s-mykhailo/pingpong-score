@@ -1,5 +1,7 @@
 package com.sm.smtts.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,7 +38,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.sm.smtts.BuildConfig
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.ThemeMode
@@ -241,6 +245,8 @@ fun AccountSettings(
 
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         notice?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+
+        AboutSection()
     }
 
     codeToShow?.let { (title, code) ->
@@ -263,4 +269,30 @@ internal fun roleLabel(role: String) = when (role) {
     "masterkey" -> "Master"
     "admin" -> "Admin"
     else -> "User"
+}
+
+/** "Про додаток" - версія збірки та посилання на Telegram-канал і автора. */
+@Composable
+private fun AboutSection() {
+    val context = LocalContext.current
+    fun openUrl(url: String) {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Про додаток", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Версія ${BuildConfig.VERSION_NAME}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        TextButton(
+            onClick = { openUrl("https://t.me/s_mykhailo_dev") },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Telegram-канал") }
+        TextButton(
+            onClick = { openUrl("https://t.me/savchenko_mykhailo") },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Автор у Telegram") }
+    }
 }
