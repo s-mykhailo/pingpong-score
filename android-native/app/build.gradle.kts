@@ -12,12 +12,12 @@ plugins {
 
 android {
     namespace = "com.sm.smtts"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.sm.smtts"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 4
         versionName = "1.3"
         // App has no localized strings.xml of its own (all UI text is hardcoded Ukrainian in
