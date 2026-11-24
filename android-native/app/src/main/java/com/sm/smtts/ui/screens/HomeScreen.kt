@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -95,6 +96,7 @@ fun HomeScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var showJoinDialog by remember { mutableStateOf(false) }
     var showCreateDialog by remember { mutableStateOf(false) }
+    var showAccountDialog by remember { mutableStateOf(false) }
     val canCreateRooms = session.user.role == "admin" || session.user.role == "masterkey"
     val hasContent = rooms.isNotEmpty() || pendingCreates.isNotEmpty() || pendingJoins.isNotEmpty()
     var syncingRooms by remember { mutableStateOf(false) }
@@ -214,7 +216,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Column {
+                    Column(modifier = Modifier.clickable { showAccountDialog = true }) {
                         Text(
                             session.user.nickname,
                             style = MaterialTheme.typography.headlineSmall,
@@ -287,6 +289,14 @@ fun HomeScreen(
                 }
             }
         }
+    }
+
+    if (showAccountDialog) {
+        AccountDialog(
+            session = session,
+            authRepository = authRepository,
+            onDismiss = { showAccountDialog = false },
+        )
     }
 
     if (showJoinDialog) {
