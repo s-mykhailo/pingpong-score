@@ -57,6 +57,15 @@
     .muted { color: var(--muted); font-size: 12px; }
     .error { color: var(--danger); margin-top: 8px; font-size: 13px; }
     .hidden { display: none; }
+    .stat-card {
+      background: #0f0f11;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      min-width: 120px;
+    }
+    .stat-card .stat-value { font-size: 22px; font-weight: 600; }
+    .stat-card .stat-label { color: var(--muted); font-size: 12px; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -71,6 +80,9 @@
   </div>
 
   <div id="appPanel" class="hidden">
+    <h2>Загальна статистика</h2>
+    <div class="row" id="statsRow"></div>
+
     <h2>Юзери</h2>
     <div class="panel">
       <div class="row">
@@ -115,6 +127,7 @@
     const loginError = document.getElementById("loginError");
     const usersBody = document.getElementById("usersBody");
     const roomsBody = document.getElementById("roomsBody");
+    const statsRow = document.getElementById("statsRow");
     const usersError = document.getElementById("usersError");
     const roomsError = document.getElementById("roomsError");
 
@@ -141,6 +154,34 @@
       if (!v) return "";
       const d = new Date(v);
       return isNaN(d.getTime()) ? String(v) : d.toLocaleString("uk-UA");
+    }
+
+    const ROLE_LABELS = { masterkey: "Masterkey", admin: "Admin", user: "User" };
+
+    function statCard(label, value) {
+      const card = document.createElement("div");
+      card.className = "stat-card";
+      const v = document.createElement("div");
+      v.className = "stat-value";
+      v.textContent = value;
+      const l = document.createElement("div");
+      l.className = "stat-label";
+      l.textContent = label;
+      card.appendChild(v);
+      card.appendChild(l);
+      return card;
+    }
+
+    function renderStats() {
+      const byRole = {};
+      users.forEach(u => { byRole[u.role] = (byRole[u.role] || 0) + 1; });
+
+      statsRow.innerHTML = "";
+      statsRow.appendChild(statCard("Всього юзерів", users.length));
+      Object.keys(ROLE_LABELS).forEach(role => {
+        statsRow.appendChild(statCard(ROLE_LABELS[role], byRole[role] || 0));
+      });
+      statsRow.appendChild(statCard("Всього кімнат", rooms.length));
     }
 
     function renderUsers() {
@@ -257,6 +298,7 @@
         const res = await call("adminListUsers", {});
         users = res.users;
         renderUsers();
+        renderStats();
       } catch (e) {
         showError(usersError, e.message);
       }
@@ -268,6 +310,7 @@
         const res = await call("adminListRooms", {});
         rooms = res.rooms;
         renderRooms();
+        renderStats();
       } catch (e) {
         showError(roomsError, e.message);
       }

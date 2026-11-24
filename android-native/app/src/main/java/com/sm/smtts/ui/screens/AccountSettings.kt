@@ -246,6 +246,7 @@ fun AccountSettings(
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         notice?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
 
+        InviteFriendSection()
         AboutSection()
     }
 
@@ -279,6 +280,39 @@ internal fun roleAccentColor(role: String) = when (role) {
     else -> MaterialTheme.colorScheme.onSurfaceVariant
 }
 
+private const val WEB_VERSION_URL = "https://s-mykhailo.github.io/pingpong-score/"
+private const val TELEGRAM_CHANNEL_URL = "https://t.me/s_mykhailo_dev"
+
+/** "Запросити друга" - ділиться посиланням на веб-версію або канал через системний шер-лист. */
+@Composable
+private fun InviteFriendSection() {
+    val context = LocalContext.current
+    fun shareUrl(text: String) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        context.startActivity(Intent.createChooser(intent, "Поділитися"))
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Запросити друга", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Надішли посилання на веб-версію SM TTS, щоб друг міг переглянути рахунок без встановлення застосунку.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        PressButton(
+            onClick = { shareUrl("Переглянь рахунок у SM TTS: $WEB_VERSION_URL") },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Поділитися веб-версією") }
+        OutlinedButton(
+            onClick = { shareUrl("SM TTS - трекер рахунку настільного тенісу. Канал: $TELEGRAM_CHANNEL_URL Веб-версія: $WEB_VERSION_URL") },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Поділитися каналом і веб-версією") }
+    }
+}
+
 /** "Про додаток" - версія збірки та посилання на Telegram-канал і автора. */
 @Composable
 private fun AboutSection() {
@@ -295,7 +329,11 @@ private fun AboutSection() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         TextButton(
-            onClick = { openUrl("https://t.me/s_mykhailo_dev") },
+            onClick = { openUrl(WEB_VERSION_URL) },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Веб-версія") }
+        TextButton(
+            onClick = { openUrl(TELEGRAM_CHANNEL_URL) },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("Telegram-канал") }
         TextButton(
