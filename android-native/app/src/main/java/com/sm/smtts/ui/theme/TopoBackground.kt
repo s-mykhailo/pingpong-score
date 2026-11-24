@@ -29,7 +29,8 @@ private class TopoBuffers {
     var widthPx = -1
     var heightPx = -1
     var field = FloatArray(0)
-    val path = Path()
+    var paths: Array<Path> = Array(LEVELS.size) { Path() }
+    var hasGeometry = false
 }
 
 /**
@@ -41,9 +42,16 @@ private class TopoBuffers {
  * тримаються в remember і перевикористовуються кожен кадр: жодних алокацій у
  * гарячому циклі, лише перебудова вже існуючих масивів/Path. Анімація йде вперед-назад
  * (Reverse), а не Restart, щоб уникнути візуального "стрибка" шуму в момент цикл-репіту.
+ *
+ * [active] вимикає лише перерахунок геометрії (marching squares по 8 рівнях - найдорожча
+ * частина цього Canvas), а не сам Canvas чи інфініт-анімацію: востаннє побудовані контури
+ * просто перемальовуються без перебудови. Викликається з false під час AnimatedContent-переходів
+ * (SmttsNavHost/RoomScreen), де цей фон малюється одночасно на двох повних екранах (той, що
+ * йде, і той, що приходить) - без цього подвійний перерахунок на кожен кадр саме в ці 280мс
+ * і є причиною "нерівного" переходу на реальному пристрої.
  */
 @Composable
-fun TopoBackground(modifier: Modifier = Modifier, darkTheme: Boolean = LocalDarkTheme.current) {
+fun TopoBackground(modifier: Modifier = Modifier, darkTheme: Boolean = LocalDarkTheme.current, active: Boolean = true) {
     val infinite = rememberInfiniteTransition(label = "topo")
     val t by infinite.animateFloat(
         initialValue = 0f,
@@ -69,51 +77,57 @@ fun TopoBackground(modifier: Modifier = Modifier, darkTheme: Boolean = LocalDark
             buffers.cols = (size.width / cellPx).toInt() + 2
             buffers.rows = (size.height / cellPx).toInt() + 2
             buffers.field = FloatArray(buffers.cols * buffers.rows)
+            buffers.hasGeometry = false
         }
 
-        val cols = buffers.cols
-        val rows = buffers.rows
-        val field = buffers.field
-        val z = t * Z_RANGE
+        if (active || !buffers.hasGeometry) {
+            val cols = buffers.cols
+            val rows = buffers.rows
+            val field = buffers.field
+            val z = t * Z_RANGE
 
-        for (j in 0 until rows) {
-            for (i in 0 until cols) {
-                field[j * cols + i] = SimplexNoise.noise3(i * NOISE_SCALE, j * NOISE_SCALE, z)
+            for (j in 0 until rows) {
+                for (i in 0 until cols) {
+                    field[j * cols + i] = SimplexNoise.noise3(i * NOISE_SCALE, j * NOISE_SCALE, z)
+                }
             }
+
+            for ((levelIdx, level) in LEVELS.withIndex()) {
+                val path = buffers.paths[levelIdx]
+                path.reset()
+                for (j in 0 until rows - 1) {
+                    for (i in 0 until cols - 1) {
+                        val tl = field[j * cols + i]
+                        val tr = field[j * cols + i + 1]
+                        val br = field[(j + 1) * cols + i + 1]
+                        val bl = field[(j + 1) * cols + i]
+
+                        var idx = 0
+                        if (tl > level) idx = idx or 8
+                        if (tr > level) idx = idx or 4
+                        if (br > level) idx = idx or 2
+                        if (bl > level) idx = idx or 1
+                        if (idx == 0 || idx == 15) continue
+
+                        val x0 = i * cellPx
+                        val y0 = j * cellPx
+                        val x1 = x0 + cellPx
+                        val y1 = y0 + cellPx
+
+                        val topX = lerp(x0, x1, tl, tr, level)
+                        val rightY = lerp(y0, y1, tr, br, level)
+                        val bottomX = lerp(x0, x1, bl, br, level)
+                        val leftY = lerp(y0, y1, tl, bl, level)
+
+                        drawCase(path, idx, topX, y0, x1, rightY, bottomX, y1, x0, leftY)
+                    }
+                }
+            }
+            buffers.hasGeometry = true
         }
 
         val strokeWidth = STROKE_DP.dp.toPx()
-
-        for (level in LEVELS) {
-            val path = buffers.path
-            path.reset()
-            for (j in 0 until rows - 1) {
-                for (i in 0 until cols - 1) {
-                    val tl = field[j * cols + i]
-                    val tr = field[j * cols + i + 1]
-                    val br = field[(j + 1) * cols + i + 1]
-                    val bl = field[(j + 1) * cols + i]
-
-                    var idx = 0
-                    if (tl > level) idx = idx or 8
-                    if (tr > level) idx = idx or 4
-                    if (br > level) idx = idx or 2
-                    if (bl > level) idx = idx or 1
-                    if (idx == 0 || idx == 15) continue
-
-                    val x0 = i * cellPx
-                    val y0 = j * cellPx
-                    val x1 = x0 + cellPx
-                    val y1 = y0 + cellPx
-
-                    val topX = lerp(x0, x1, tl, tr, level)
-                    val rightY = lerp(y0, y1, tr, br, level)
-                    val bottomX = lerp(x0, x1, bl, br, level)
-                    val leftY = lerp(y0, y1, tl, bl, level)
-
-                    drawCase(path, idx, topX, y0, x1, rightY, bottomX, y1, x0, leftY)
-                }
-            }
+        for (path in buffers.paths) {
             drawPath(path, color = tint, style = Stroke(width = strokeWidth))
         }
     }
