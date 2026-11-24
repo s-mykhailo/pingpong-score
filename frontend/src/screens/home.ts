@@ -1,6 +1,7 @@
 import { renderShell } from './shell';
 import { navigate } from '../router';
 import { getData, subscribe, refresh } from '../store';
+import { getCurrentRoom } from '../room';
 import { getLiveMatch, subscribeLiveMatch } from '../match/liveMatch';
 import { sortedMatchHistory, playerName } from '../stats/compute';
 import type { Match, Player } from '../types';
@@ -19,7 +20,8 @@ export function render(root: HTMLElement): () => void {
 
       return `
         <div class="topbar">
-          <div class="topbar-title md-typescale-headline-small">${data?.group.name ?? ''}</div>
+          <md-icon-button id="rooms-btn"><md-icon>arrow_back</md-icon></md-icon-button>
+          <div class="topbar-title md-typescale-headline-small">${escapeHtml(getCurrentRoom()?.name ?? '')}</div>
           <md-icon-button id="refresh-btn"><md-icon>refresh</md-icon></md-icon-button>
         </div>
 
@@ -75,6 +77,7 @@ export function render(root: HTMLElement): () => void {
       content.querySelector('#new-match-btn')?.addEventListener('click', () => navigate('match-setup'));
       content.querySelector('#resume-btn')?.addEventListener('click', () => navigate('scoreboard'));
       content.querySelector('#refresh-btn')?.addEventListener('click', () => void refresh());
+      content.querySelector('#rooms-btn')?.addEventListener('click', () => navigate('rooms'));
     }
 
     draw();
@@ -86,4 +89,8 @@ export function render(root: HTMLElement): () => void {
       unsubLive();
     };
   });
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 }

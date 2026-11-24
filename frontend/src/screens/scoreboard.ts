@@ -5,6 +5,7 @@ import { queueMatch } from '../offline/db';
 import { syncPendingMatches, refreshPendingCount } from '../offline/sync';
 import { mergeMatchLocal } from '../store';
 import { getData } from '../store';
+import { getCurrentRoomId } from '../room';
 import type { LiveMatchState, Match } from '../types';
 
 export function render(root: HTMLElement): () => void {
@@ -95,6 +96,8 @@ export function render(root: HTMLElement): () => void {
   }
 
   async function finishMatch(state: LiveMatchState) {
+    const roomId = getCurrentRoomId();
+    if (!roomId) return;
     const winnerIdx = matchWinner(state.finishedSets, state.rules);
     const ids = [state.player1, state.player2] as const;
     const match: Match = {
@@ -110,7 +113,7 @@ export function render(root: HTMLElement): () => void {
       partner1: state.partner1,
       partner2: state.partner2,
     };
-    await queueMatch(match);
+    await queueMatch(roomId, match);
     mergeMatchLocal(match);
     await refreshPendingCount();
     void syncPendingMatches();

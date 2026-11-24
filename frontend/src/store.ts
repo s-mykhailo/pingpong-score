@@ -1,5 +1,6 @@
 import { getAll, type AllData } from './api/client';
 import { cacheAllData, getCachedAllData } from './offline/db';
+import { getCurrentRoomId } from './room';
 import type { Match, Preset, Player } from './types';
 
 type Listener = () => void;
@@ -21,16 +22,18 @@ export function getData(): AllData | null {
 }
 
 export async function loadInitial(): Promise<void> {
-  const cached = await getCachedAllData();
+  const roomId = getCurrentRoomId();
+  if (!roomId) return;
+  const cached = await getCachedAllData(roomId);
   if (cached) {
     data = cached;
     notify();
   }
   if (navigator.onLine) {
     try {
-      const fresh = await getAll();
+      const fresh = await getAll(roomId);
       data = fresh;
-      await cacheAllData(fresh);
+      await cacheAllData(roomId, fresh);
       notify();
     } catch {
       // stay on cached data
@@ -39,11 +42,12 @@ export async function loadInitial(): Promise<void> {
 }
 
 export async function refresh(): Promise<void> {
-  if (!navigator.onLine) return;
+  const roomId = getCurrentRoomId();
+  if (!roomId || !navigator.onLine) return;
   try {
-    const fresh = await getAll();
+    const fresh = await getAll(roomId);
     data = fresh;
-    await cacheAllData(fresh);
+    await cacheAllData(roomId, fresh);
     notify();
   } catch {
     // ignore, keep showing stale data
@@ -94,4 +98,5 @@ export function removePresetLocal(id: string): void {
 
 export function clearData(): void {
   data = null;
+  notify();
 }

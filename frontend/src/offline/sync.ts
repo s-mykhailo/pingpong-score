@@ -1,5 +1,6 @@
 import { addMatch, NetworkError } from '../api/client';
 import { getPendingMatches, removePendingMatch } from './db';
+import { getCurrentRoomId } from '../room';
 
 type Listener = (pendingCount: number) => void;
 
@@ -12,25 +13,27 @@ export function onPendingCountChange(fn: Listener): () => void {
 }
 
 async function notify() {
-  const pending = await getPendingMatches();
+  const roomId = getCurrentRoomId();
+  const pending = roomId ? await getPendingMatches(roomId) : [];
   for (const fn of listeners) fn(pending.length);
 }
 
 export async function syncPendingMatches(): Promise<void> {
-  if (syncing || !navigator.onLine) return;
+  const roomId = getCurrentRoomId();
+  if (syncing || !navigator.onLine || !roomId) return;
   syncing = true;
   try {
-    const pending = await getPendingMatches();
+    const pending = await getPendingMatches(roomId);
     for (const match of pending) {
       try {
-        await addMatch(match);
-        await removePendingMatch(match.id);
+        await addMatch(roomId, match);
+        await removePendingMatch(roomId, match.id);
       } catch (e) {
         if (e instanceof NetworkError) {
           break; // offline or unreachable - stop, try again later
         }
         // Server rejected the match permanently (bad data) - drop it so the queue doesn't jam forever.
-        await removePendingMatch(match.id);
+        await removePendingMatch(roomId, match.id);
       }
     }
   } finally {

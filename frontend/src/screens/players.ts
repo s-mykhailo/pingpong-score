@@ -1,6 +1,7 @@
 import { renderShell } from './shell';
 import { getData, subscribe, mergePlayer, removePlayerLocal } from '../store';
-import { addPlayer, deletePlayer, getSession, NetworkError } from '../api/client';
+import { addPlayer, deletePlayer, NetworkError } from '../api/client';
+import { getCurrentRoom, getCurrentRoomId } from '../room';
 import { computePlayerStats, computeMvp, playerName, type MvpEntry } from '../stats/compute';
 import type { Player } from '../types';
 
@@ -15,7 +16,7 @@ export function render(root: HTMLElement): () => void {
       const data = getData();
       const players = data?.players ?? [];
       const matches = data?.matches ?? [];
-      const isAdmin = getSession()?.role === 'admin';
+      const isAdmin = getCurrentRoom()?.isAdmin ?? false;
       const now = Date.now();
       const mvpWeek = computeMvp(matches, now - 7 * DAY_MS);
       const mvpMonth = computeMvp(matches, now - 30 * DAY_MS);
@@ -65,9 +66,10 @@ export function render(root: HTMLElement): () => void {
 
     async function onAdd() {
       const name = newName.trim();
-      if (!name) return;
+      const roomId = getCurrentRoomId();
+      if (!name || !roomId) return;
       try {
-        const player = await addPlayer(name);
+        const player = await addPlayer(roomId, name);
         mergePlayer(player);
         newName = '';
         error = '';
@@ -79,8 +81,10 @@ export function render(root: HTMLElement): () => void {
     }
 
     async function onDelete(id: string) {
+      const roomId = getCurrentRoomId();
+      if (!roomId) return;
       try {
-        await deletePlayer(id);
+        await deletePlayer(roomId, id);
         removePlayerLocal(id);
       } catch (e) {
         error = e instanceof NetworkError ? 'Немає інтернету.' : 'Не вдалося видалити гравця.';

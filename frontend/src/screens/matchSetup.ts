@@ -1,5 +1,6 @@
 import { addPlayer, savePreset, NetworkError } from '../api/client';
 import { getData, subscribe, mergePlayer, mergePresetLocal } from '../store';
+import { getCurrentRoomId } from '../room';
 import { navigate } from '../router';
 import { setLiveMatch } from '../match/liveMatch';
 import { createLiveMatch } from '../match/rules';
@@ -219,9 +220,10 @@ export function render(root: HTMLElement): () => void {
 
   async function onAddPlayer() {
     const name = newPlayerName.trim();
-    if (!name) return;
+    const roomId = getCurrentRoomId();
+    if (!name || !roomId) return;
     try {
-      const player = await addPlayer(name);
+      const player = await addPlayer(roomId, name);
       mergePlayer(player);
       newPlayerName = '';
       if (!player1) player1 = player.id;
@@ -236,9 +238,10 @@ export function render(root: HTMLElement): () => void {
 
   async function onSavePreset() {
     const name = presetNameToSave.trim();
-    if (!name) return;
+    const roomId = getCurrentRoomId();
+    if (!name || !roomId) return;
     try {
-      const preset = await savePreset({ name, rules: customRules });
+      const preset = await savePreset(roomId, { name, rules: customRules });
       mergePresetLocal(preset);
       presetNameToSave = '';
       presetId = preset.id;

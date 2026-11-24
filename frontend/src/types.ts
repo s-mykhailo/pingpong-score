@@ -36,17 +36,26 @@ export interface Match {
   partner2: string | null;
 }
 
-export interface Group {
-  id: string;
-  name: string;
-}
+export type UserRole = 'user' | 'admin' | 'masterkey';
 
-export type Role = 'admin' | 'member';
+export interface User {
+  id: string;
+  nickname: string;
+  avatar: string;
+  role: UserRole;
+  hasRecoveryQuestion: boolean;
+  recoveryQuestion: string;
+}
 
 export interface Session {
   token: string;
-  role: Role;
-  group: Group;
+  user: User;
+}
+
+export interface RoomSummary {
+  id: string;
+  name: string;
+  isAdmin: boolean;
 }
 
 export interface LiveMatchState {

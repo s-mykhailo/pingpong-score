@@ -1,7 +1,9 @@
 import { getSession } from './api/client';
+import { getCurrentRoomId } from './room';
 
 export type Route =
   | 'login'
+  | 'rooms'
   | 'home'
   | 'match-setup'
   | 'scoreboard'
@@ -15,6 +17,7 @@ type ScreenModule = {
 
 const screens: Partial<Record<Route, () => Promise<ScreenModule>>> = {
   login: () => import('./screens/login'),
+  rooms: () => import('./screens/rooms'),
   home: () => import('./screens/home'),
   'match-setup': () => import('./screens/matchSetup'),
   scoreboard: () => import('./screens/scoreboard'),
@@ -24,6 +27,7 @@ const screens: Partial<Record<Route, () => Promise<ScreenModule>>> = {
 };
 
 const PUBLIC_ROUTES: Route[] = ['login'];
+const ROOM_ROUTES: Route[] = ['home', 'match-setup', 'scoreboard', 'stats', 'players', 'settings'];
 
 let currentCleanup: (() => void) | void;
 let root: HTMLElement;
@@ -36,7 +40,7 @@ function parseRoute(): Route {
   const hash = location.hash.replace(/^#\/?/, '');
   const route = hash.split('?')[0] as Route;
   if (route in screens) return route;
-  return getSession() ? 'home' : 'login';
+  return getSession() ? 'rooms' : 'login';
 }
 
 async function renderRoute(): Promise<void> {
@@ -49,8 +53,13 @@ async function renderRoute(): Promise<void> {
     return; // hashchange will re-trigger renderRoute
   }
   if (session && route === 'login') {
-    route = 'home';
-    location.hash = '#/home';
+    route = getCurrentRoomId() ? 'home' : 'rooms';
+    location.hash = `#/${route}`;
+    return;
+  }
+  if (session && ROOM_ROUTES.includes(route) && !getCurrentRoomId()) {
+    route = 'rooms';
+    location.hash = '#/rooms';
     return;
   }
 

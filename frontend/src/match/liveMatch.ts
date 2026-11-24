@@ -1,4 +1,5 @@
 import { getCurrentMatch, saveCurrentMatch } from '../offline/db';
+import { getCurrentRoomId } from '../room';
 import type { LiveMatchState } from '../types';
 
 let current: LiveMatchState | null = null;
@@ -14,7 +15,8 @@ function notify() {
 }
 
 export async function loadLiveMatch(): Promise<LiveMatchState | null> {
-  current = (await getCurrentMatch()) ?? null;
+  const roomId = getCurrentRoomId();
+  current = roomId ? ((await getCurrentMatch(roomId)) ?? null) : null;
   return current;
 }
 
@@ -24,6 +26,7 @@ export function getLiveMatch(): LiveMatchState | null {
 
 export function setLiveMatch(state: LiveMatchState | null): void {
   current = state;
-  void saveCurrentMatch(state);
+  const roomId = getCurrentRoomId();
+  if (roomId) void saveCurrentMatch(roomId, state);
   notify();
 }
