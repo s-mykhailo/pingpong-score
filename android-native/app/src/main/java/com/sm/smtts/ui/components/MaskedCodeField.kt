@@ -74,7 +74,7 @@ private class MaskedCodeVisualTransformation(
                 builder.withStyle(SpanStyle(color = placeholderColor)) { append(placeholderChar) }
             }
         }
-        return TransformedText(builder.toAnnotatedString(), offsetMapping(codeLength, groupSize))
+        return TransformedText(builder.toAnnotatedString(), offsetMapping(raw.length, codeLength, groupSize))
     }
 }
 
@@ -83,20 +83,29 @@ private class MaskedCodeVisualTransformation(
  * від того, скільки символів уже введено (дефіс - структурний роздільник груп, а не межа
  * введеного/невведеного). Курсор "перестрибує" щойно вставлений дефіс одразу - так само,
  * як у типових масках номера картки/телефону.
+ *
+ * Важливо: Compose вимагає, щоб [OffsetMapping] повертала позиції лише в межах РЕАЛЬНО
+ * введеного тексту (0..rawLength), навіть якщо тап стався десь у ще не введеній
+ * (плейсхолдерній) частині маски - у цьому разі курсор просто "прилипає" до кінця
+ * введеного. Раніше тут помилково рахувалось відносно повної довжини коду (codeLength),
+ * через що Compose кидав IllegalStateException і застосунок крашився.
  */
-private fun offsetMapping(codeLength: Int, groupSize: Int) = object : OffsetMapping {
+private fun offsetMapping(rawLength: Int, codeLength: Int, groupSize: Int) = object : OffsetMapping {
     private fun dashesBefore(offset: Int): Int {
         if (codeLength <= 0) return 0
         val capped = offset.coerceIn(0, codeLength - 1)
         return capped / groupSize
     }
 
-    override fun originalToTransformed(offset: Int): Int = offset + dashesBefore(offset)
+    override fun originalToTransformed(offset: Int): Int {
+        val capped = offset.coerceIn(0, rawLength)
+        return capped + dashesBefore(capped)
+    }
 
     override fun transformedToOriginal(offset: Int): Int {
-        for (raw in 0..codeLength) {
+        for (raw in 0..rawLength) {
             if (originalToTransformed(raw) >= offset) return raw
         }
-        return codeLength
+        return rawLength
     }
 }
