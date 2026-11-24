@@ -22,8 +22,10 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -133,29 +135,38 @@ fun RoomScreen(
                                 )
                             }
                         }
+                        val tabColors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.secondary,
+                            selectedTextColor = MaterialTheme.colorScheme.secondary,
+                            indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
+                        )
                         NavigationBarItem(
                             selected = tab == RoomTab.HOME,
                             onClick = { goTo(RoomTab.HOME) },
                             icon = { Icon(Icons.Filled.Home, contentDescription = null) },
                             label = { Text(RoomTab.HOME.label) },
+                            colors = tabColors,
                         )
                         NavigationBarItem(
                             selected = tab == RoomTab.STATS,
                             onClick = { goTo(RoomTab.STATS) },
                             icon = { Icon(Icons.Filled.BarChart, contentDescription = null) },
                             label = { Text(RoomTab.STATS.label) },
+                            colors = tabColors,
                         )
                         NavigationBarItem(
                             selected = tab == RoomTab.PLAYERS,
                             onClick = { goTo(RoomTab.PLAYERS) },
                             icon = { Icon(Icons.Filled.Group, contentDescription = null) },
                             label = { Text(RoomTab.PLAYERS.label) },
+                            colors = tabColors,
                         )
                         NavigationBarItem(
                             selected = tab == RoomTab.SETTINGS,
                             onClick = { goTo(RoomTab.SETTINGS) },
                             icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
                             label = { Text(RoomTab.SETTINGS.label) },
+                            colors = tabColors,
                         )
                     }
                 },
