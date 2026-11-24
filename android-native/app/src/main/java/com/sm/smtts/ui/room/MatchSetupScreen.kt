@@ -29,6 +29,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,6 +42,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.sm.smtts.data.MODE_DOUBLES
+import com.sm.smtts.data.MODE_SINGLES
 import com.sm.smtts.data.Player
 import com.sm.smtts.data.Preset
 import com.sm.smtts.data.Rules
@@ -52,8 +57,11 @@ fun MatchSetupScreen(vm: RoomViewModel, onBack: () -> Unit, onStart: () -> Unit)
     val players = data?.players ?: emptyList()
     val presets = data?.presets ?: emptyList()
 
+    var mode by remember { mutableStateOf(MODE_SINGLES) }
     var player1 by remember { mutableStateOf("") }
     var player2 by remember { mutableStateOf("") }
+    var partner1 by remember { mutableStateOf("") }
+    var partner2 by remember { mutableStateOf("") }
     var presetId by remember { mutableStateOf<String?>(null) }
     var customRules by remember { mutableStateOf(DefaultRules) }
     var firstServer by remember { mutableStateOf(0) }
@@ -79,9 +87,33 @@ fun MatchSetupScreen(vm: RoomViewModel, onBack: () -> Unit, onStart: () -> Unit)
             Text("Новий матч", style = MaterialTheme.typography.headlineSmall)
         }
 
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            SegmentedButton(
+                selected = mode == MODE_SINGLES,
+                onClick = { mode = MODE_SINGLES },
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+            ) { Text("Одиночна") }
+            SegmentedButton(
+                selected = mode == MODE_DOUBLES,
+                onClick = { mode = MODE_DOUBLES },
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+            ) { Text("Парна 2х2") }
+        }
+
+        val chosen = if (mode == MODE_DOUBLES) listOf(player1, player2, partner1, partner2) else listOf(player1, player2)
+
         Text("Гравці", style = MaterialTheme.typography.titleMedium)
-        PlayerDropdown("Гравець 1", players.filter { it.id != player2 }, player1) { player1 = it }
-        PlayerDropdown("Гравець 2", players.filter { it.id != player1 }, player2) { player2 = it }
+        if (mode == MODE_DOUBLES) {
+            Text("Команда А", style = MaterialTheme.typography.labelLarge)
+            PlayerDropdown("Гравець 1 (А)", players.filter { it.id !in chosen.minus(player1) }, player1) { player1 = it }
+            PlayerDropdown("Гравець 2 (А)", players.filter { it.id !in chosen.minus(partner1) }, partner1) { partner1 = it }
+            Text("Команда Б", style = MaterialTheme.typography.labelLarge)
+            PlayerDropdown("Гравець 1 (Б)", players.filter { it.id !in chosen.minus(player2) }, player2) { player2 = it }
+            PlayerDropdown("Гравець 2 (Б)", players.filter { it.id !in chosen.minus(partner2) }, partner2) { partner2 = it }
+        } else {
+            PlayerDropdown("Гравець 1", players.filter { it.id !in chosen.minus(player1) }, player1) { player1 = it }
+            PlayerDropdown("Гравець 2", players.filter { it.id !in chosen.minus(player2) }, player2) { player2 = it }
+        }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 value = newPlayerName,
@@ -148,18 +180,22 @@ fun MatchSetupScreen(vm: RoomViewModel, onBack: () -> Unit, onStart: () -> Unit)
             }
         }
 
+        val rotation = if (mode == MODE_DOUBLES) listOf(player1, player2, partner1, partner2) else listOf(player1, player2)
+
         Text("Перша подача", style = MaterialTheme.typography.titleMedium)
+        if (firstServer >= rotation.size) firstServer = 0
         Row {
-            RadioRow(players.find { it.id == player1 }?.name ?: "Гравець 1", firstServer == 0) { firstServer = 0 }
-            RadioRow(players.find { it.id == player2 }?.name ?: "Гравець 2", firstServer == 1) { firstServer = 1 }
+            rotation.forEachIndexed { idx, id ->
+                RadioRow(players.find { it.id == id }?.name ?: "Гравець ${idx + 1}", firstServer == idx) { firstServer = idx }
+            }
         }
 
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
         PressButton(
             onClick = {
-                if (player1.isBlank() || player2.isBlank() || player1 == player2) {
-                    error = "Оберіть двох різних гравців."
+                if (chosen.any { it.isBlank() } || chosen.toSet().size != chosen.size) {
+                    error = if (mode == MODE_DOUBLES) "Оберіть чотирьох різних гравців." else "Оберіть двох різних гравців."
                     return@PressButton
                 }
                 if (rules.bestOf % 2 == 0 || rules.bestOf < 1 || rules.pointsToWin < 1) {
@@ -167,7 +203,12 @@ fun MatchSetupScreen(vm: RoomViewModel, onBack: () -> Unit, onStart: () -> Unit)
                     return@PressButton
                 }
                 val presetName = if (usingCustom) "" else (selectedPreset?.name ?: "")
-                vm.startMatch(player1, player2, rules, presetName, firstServer)
+                vm.startMatch(
+                    player1, player2, rules, presetName, firstServer,
+                    mode = mode,
+                    partner1 = if (mode == MODE_DOUBLES) partner1 else null,
+                    partner2 = if (mode == MODE_DOUBLES) partner2 else null,
+                )
                 onStart()
             },
             modifier = Modifier.fillMaxWidth(),

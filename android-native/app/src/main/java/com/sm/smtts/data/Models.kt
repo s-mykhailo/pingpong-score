@@ -108,6 +108,10 @@ data class Preset(
     }
 }
 
+/** "singles" (2 players) or "doubles" (4 players, partner1/partner2 set). */
+const val MODE_SINGLES = "singles"
+const val MODE_DOUBLES = "doubles"
+
 data class Match(
     val id: String,
     val playedAt: String,
@@ -117,6 +121,9 @@ data class Match(
     val winner: String,
     val rules: Rules,
     val presetName: String,
+    val mode: String = MODE_SINGLES,
+    val partner1: String? = null,
+    val partner2: String? = null,
 ) {
     companion object {
         fun fromJson(o: JSONObject): Match {
@@ -134,6 +141,9 @@ data class Match(
                 winner = o.optString("winner", ""),
                 rules = rulesFromJson(o.getJSONObject("rules")),
                 presetName = o.optString("presetName", ""),
+                mode = o.optString("mode", MODE_SINGLES).ifBlank { MODE_SINGLES },
+                partner1 = o.optString("partner1", "").ifBlank { null },
+                partner2 = o.optString("partner2", "").ifBlank { null },
             )
         }
     }
@@ -147,6 +157,9 @@ data class Match(
         put("winner", winner)
         put("rules", rulesToJson(rules))
         put("presetName", presetName)
+        put("mode", mode)
+        put("partner1", partner1 ?: "")
+        put("partner2", partner2 ?: "")
     }
 }
 

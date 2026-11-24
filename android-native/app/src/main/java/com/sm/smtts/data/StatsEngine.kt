@@ -14,8 +14,15 @@ data class PlayerStats(
 /** Direct port of frontend/src/stats/compute.ts — keep the two in sync. */
 object StatsEngine {
 
+    /** 0 if playerId is on the player1/partner1 side, 1 if on the player2/partner2 side, null if not in this match. */
+    fun playerSide(m: Match, playerId: String): Int? = when {
+        playerId == m.player1 || playerId == m.partner1 -> 0
+        playerId == m.player2 || playerId == m.partner2 -> 1
+        else -> null
+    }
+
     fun computePlayerStats(matches: List<Match>, playerId: String): PlayerStats {
-        val own = matches.filter { it.player1 == playerId || it.player2 == playerId }
+        val own = matches.filter { playerSide(it, playerId) != null }
             .sortedBy { it.playedAt }
 
         var wins = 0
@@ -25,11 +32,11 @@ object StatsEngine {
         val results = mutableListOf<Boolean>()
 
         for (m in own) {
-            val won = m.winner == playerId
+            val isP1 = playerSide(m, playerId) == 0
+            val won = m.winner == (if (isP1) m.player1 else m.player2)
             if (won) wins++ else losses++
             results.add(won)
 
-            val isP1 = m.player1 == playerId
             for (s in m.sets) {
                 val mine = if (isP1) s.a else s.b
                 val theirs = if (isP1) s.b else s.a
@@ -78,9 +85,13 @@ object StatsEngine {
                 }
                 if (playedAtMs == null || playedAtMs < sinceMs) continue
             }
-            playedByPlayer[m.player1] = (playedByPlayer[m.player1] ?: 0) + 1
-            playedByPlayer[m.player2] = (playedByPlayer[m.player2] ?: 0) + 1
-            winsByPlayer[m.winner] = (winsByPlayer[m.winner] ?: 0) + 1
+            val winningSideIds = if (m.winner == m.player1) listOfNotNull(m.player1, m.partner1) else listOfNotNull(m.player2, m.partner2)
+            for (id in listOfNotNull(m.player1, m.partner1, m.player2, m.partner2)) {
+                playedByPlayer[id] = (playedByPlayer[id] ?: 0) + 1
+            }
+            for (id in winningSideIds) {
+                winsByPlayer[id] = (winsByPlayer[id] ?: 0) + 1
+            }
         }
 
         var best: MvpEntry? = null

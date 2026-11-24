@@ -3,7 +3,7 @@ import { getData, subscribe, mergePlayer, mergePresetLocal } from '../store';
 import { navigate } from '../router';
 import { setLiveMatch } from '../match/liveMatch';
 import { createLiveMatch } from '../match/rules';
-import type { Player, Rules } from '../types';
+import type { MatchMode, Player, Rules } from '../types';
 
 const DEFAULT_RULES: Rules = {
   pointsToWin: 11,
@@ -14,11 +14,14 @@ const DEFAULT_RULES: Rules = {
 };
 
 export function render(root: HTMLElement): () => void {
+  let mode: MatchMode = 'singles';
   let player1 = '';
   let player2 = '';
+  let partner1 = '';
+  let partner2 = '';
   let presetId: string | 'custom' = '';
   let customRules: Rules = { ...DEFAULT_RULES };
-  let firstServer: 0 | 1 = 0;
+  let firstServer = 0;
   let newPlayerName = '';
   let presetNameToSave = '';
   let error = '';
@@ -31,6 +34,9 @@ export function render(root: HTMLElement): () => void {
 
     const selectedPreset = presets.find((p) => p.id === presetId);
     const rules = presetId === 'custom' ? customRules : (selectedPreset?.rules ?? DEFAULT_RULES);
+    const chosen = mode === 'doubles' ? [player1, player2, partner1, partner2] : [player1, player2];
+    const rotation = mode === 'doubles' ? [player1, player2, partner1, partner2] : [player1, player2];
+    if (firstServer >= rotation.length) firstServer = 0;
 
     root.innerHTML = `
       <div class="screen">
@@ -40,19 +46,30 @@ export function render(root: HTMLElement): () => void {
         </div>
 
         <div class="col">
+          <div class="md-typescale-title-medium">Режим</div>
+          <div class="row">
+            <label class="row"><md-radio name="mode" value="singles" ${mode === 'singles' ? 'checked' : ''}></md-radio>Одиночна</label>
+            <label class="row"><md-radio name="mode" value="doubles" ${mode === 'doubles' ? 'checked' : ''}></md-radio>Парна 2х2</label>
+          </div>
+        </div>
+
+        <div class="col">
           <div class="md-typescale-title-medium">Гравці</div>
-          <md-outlined-select id="p1" label="Гравець 1">
-            ${players
-              .filter((p) => p.id !== player2)
-              .map((p) => `<md-select-option value="${p.id}" ${p.id === player1 ? 'selected' : ''}><div slot="headline">${escapeHtml(p.name)}</div></md-select-option>`)
-              .join('')}
-          </md-outlined-select>
-          <md-outlined-select id="p2" label="Гравець 2">
-            ${players
-              .filter((p) => p.id !== player1)
-              .map((p) => `<md-select-option value="${p.id}" ${p.id === player2 ? 'selected' : ''}><div slot="headline">${escapeHtml(p.name)}</div></md-select-option>`)
-              .join('')}
-          </md-outlined-select>
+          ${
+            mode === 'doubles'
+              ? `
+            <div class="md-typescale-label-large">Команда А</div>
+            ${playerSelect('pA1', 'Гравець 1 (А)', players, chosen, player1)}
+            ${playerSelect('pA2', 'Гравець 2 (А)', players, chosen, partner1)}
+            <div class="md-typescale-label-large">Команда Б</div>
+            ${playerSelect('pB1', 'Гравець 1 (Б)', players, chosen, player2)}
+            ${playerSelect('pB2', 'Гравець 2 (Б)', players, chosen, partner2)}
+          `
+              : `
+            ${playerSelect('pA1', 'Гравець 1', players, chosen, player1)}
+            ${playerSelect('pB1', 'Гравець 2', players, chosen, player2)}
+          `
+          }
           <div class="row">
             <md-outlined-text-field class="fill" id="new-player-name" label="Новий гравець" value="${escapeAttr(newPlayerName)}"></md-outlined-text-field>
             <md-filled-tonal-button id="add-player-btn">Додати</md-filled-tonal-button>
@@ -72,8 +89,12 @@ export function render(root: HTMLElement): () => void {
         <div class="col">
           <div class="md-typescale-title-medium">Перша подача</div>
           <div class="row">
-            <label class="row"><md-radio name="server" value="0" ${firstServer === 0 ? 'checked' : ''}></md-radio>${playerLabel(players, player1, 'Гравець 1')}</label>
-            <label class="row"><md-radio name="server" value="1" ${firstServer === 1 ? 'checked' : ''}></md-radio>${playerLabel(players, player2, 'Гравець 2')}</label>
+            ${rotation
+              .map(
+                (id, idx) =>
+                  `<label class="row"><md-radio name="server" value="${idx}" ${firstServer === idx ? 'checked' : ''}></md-radio>${playerLabel(players, id, `Гравець ${idx + 1}`)}</label>`,
+              )
+              .join('')}
           </div>
         </div>
 
@@ -116,19 +137,31 @@ export function render(root: HTMLElement): () => void {
     return players.find((p) => p.id === id)?.name ?? fallback;
   }
 
+  function playerSelect(id: string, label: string, players: Player[], chosen: string[], value: string): string {
+    const options = players.filter((p) => p.id === value || !chosen.includes(p.id));
+    return `
+      <md-outlined-select id="${id}" label="${label}">
+        ${options.map((p) => `<md-select-option value="${p.id}" ${p.id === value ? 'selected' : ''}><div slot="headline">${escapeHtml(p.name)}</div></md-select-option>`).join('')}
+      </md-outlined-select>
+    `;
+  }
+
   function wire(rules: Rules) {
     root.querySelector('#back-btn')?.addEventListener('click', () => navigate('home'));
 
-    const p1Select = root.querySelector('#p1') as HTMLElement & { value: string };
-    const p2Select = root.querySelector('#p2') as HTMLElement & { value: string };
-    p1Select.addEventListener('change', () => {
-      player1 = p1Select.value;
-      draw();
+    root.querySelectorAll('md-radio[name="mode"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        mode = (el as HTMLInputElement).value as MatchMode;
+        draw();
+      });
     });
-    p2Select.addEventListener('change', () => {
-      player2 = p2Select.value;
-      draw();
-    });
+
+    bindPlayerSelect('pA1', (v) => (player1 = v));
+    bindPlayerSelect('pB1', (v) => (player2 = v));
+    if (mode === 'doubles') {
+      bindPlayerSelect('pA2', (v) => (partner1 = v));
+      bindPlayerSelect('pB2', (v) => (partner2 = v));
+    }
 
     const newPlayerField = root.querySelector('#new-player-name') as HTMLInputElement & { value: string };
     newPlayerField.addEventListener('input', () => {
@@ -161,11 +194,19 @@ export function render(root: HTMLElement): () => void {
 
     root.querySelectorAll('md-radio[name="server"]').forEach((el) => {
       el.addEventListener('change', () => {
-        firstServer = Number((el as HTMLInputElement).value) as 0 | 1;
+        firstServer = Number((el as HTMLInputElement).value);
       });
     });
 
     root.querySelector('#start-btn')?.addEventListener('click', () => onStart(rules));
+  }
+
+  function bindPlayerSelect(id: string, setter: (v: string) => void) {
+    const el = root.querySelector(`#${id}`) as (HTMLElement & { value: string }) | null;
+    el?.addEventListener('change', () => {
+      setter(el.value);
+      draw();
+    });
   }
 
   function bindNumberField(id: string, setter: (v: number) => void) {
@@ -210,8 +251,9 @@ export function render(root: HTMLElement): () => void {
   }
 
   function onStart(rules: Rules) {
-    if (!player1 || !player2 || player1 === player2) {
-      error = 'Оберіть двох різних гравців.';
+    const chosen = mode === 'doubles' ? [player1, player2, partner1, partner2] : [player1, player2];
+    if (chosen.some((id) => !id) || new Set(chosen).size !== chosen.length) {
+      error = mode === 'doubles' ? 'Оберіть чотирьох різних гравців.' : 'Оберіть двох різних гравців.';
       draw();
       return;
     }
@@ -222,7 +264,16 @@ export function render(root: HTMLElement): () => void {
     }
     const data = getData();
     const presetName = presetId === 'custom' ? '' : (data?.presets.find((p) => p.id === presetId)?.name ?? '');
-    const live = createLiveMatch(player1, player2, rules, presetName, firstServer);
+    const live = createLiveMatch(
+      player1,
+      player2,
+      rules,
+      presetName,
+      firstServer,
+      mode,
+      mode === 'doubles' ? partner1 : null,
+      mode === 'doubles' ? partner2 : null,
+    );
     setLiveMatch(live);
     navigate('scoreboard');
   }

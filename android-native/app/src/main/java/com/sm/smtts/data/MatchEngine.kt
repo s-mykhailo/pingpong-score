@@ -22,10 +22,16 @@ data class LiveMatchState(
     val presetName: String,
     val finishedSets: List<SetScore> = emptyList(),
     val currentSet: SetScore = SetScore(0, 0),
+    // Singles: 0/1 (which side serves). Doubles: 0..3, a slot in rotationOrder()
+    // ([player1, player2, partner1, partner2] = A1,B1,A2,B2, the ITTF doubles serve order).
+    // side-for-slot is always `server % 2` - singles collapses to the old 0/1 meaning.
     val server: Int,
     val pointsSinceSwitch: Int = 0,
     val firstServerOfMatch: Int,
     val startedAt: String,
+    val mode: String = MODE_SINGLES,
+    val partner1: String? = null,
+    val partner2: String? = null,
 )
 
 /** Direct port of frontend/src/match/rules.ts — keep the two in sync. */
@@ -67,6 +73,9 @@ object MatchEngine {
         rules: Rules,
         presetName: String,
         firstServer: Int,
+        mode: String = MODE_SINGLES,
+        partner1: String? = null,
+        partner2: String? = null,
     ) = LiveMatchState(
         player1 = player1,
         player2 = player2,
@@ -75,7 +84,17 @@ object MatchEngine {
         server = firstServer,
         firstServerOfMatch = firstServer,
         startedAt = Instant.now().toString(),
+        mode = mode,
+        partner1 = partner1,
+        partner2 = partner2,
     )
+
+    /** [A1, B1, A2, B2] - the fixed ITTF doubles serve/receive rotation order. Singles: [A, B]. */
+    fun rotationOrder(state: LiveMatchState): List<String> =
+        if (state.mode == MODE_DOUBLES) listOf(state.player1, state.player2, state.partner1!!, state.partner2!!)
+        else listOf(state.player1, state.player2)
+
+    private fun slotCount(state: LiveMatchState) = if (state.mode == MODE_DOUBLES) 4 else 2
 
     fun addPoint(state: LiveMatchState, scorer: Int): LiveMatchState {
         val currentSet = if (scorer == 0) {
@@ -88,7 +107,7 @@ object MatchEngine {
         val every = if (deuce) state.rules.deuceServeEvery else state.rules.serveEvery
         val pointsSinceSwitch = state.pointsSinceSwitch + 1
         val shouldSwitch = pointsSinceSwitch >= every
-        val server = if (shouldSwitch) (if (state.server == 0) 1 else 0) else state.server
+        val server = if (shouldSwitch) (state.server + 1) % slotCount(state) else state.server
 
         val winner = setWinner(currentSet.a, currentSet.b, state.rules)
         if (winner != null) {
@@ -110,7 +129,9 @@ object MatchEngine {
         )
     }
 
-    private fun flip(x: Int) = if (x == 0) 1 else 0
+    // x xor 1 flips 0<->1 and 2<->3 - "same rotation position, other team" - correct for both
+    // singles (binary sides) and doubles (4-slot rotation) with no mode branch needed.
+    private fun flip(x: Int) = x xor 1
 
     fun isMatchOver(state: LiveMatchState): Boolean = matchWinner(state.finishedSets, state.rules) != null
 

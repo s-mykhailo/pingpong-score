@@ -20,6 +20,8 @@ export interface Preset {
 
 export type SetScore = [number, number];
 
+export type MatchMode = 'singles' | 'doubles';
+
 export interface Match {
   id: string;
   playedAt: string;
@@ -29,6 +31,9 @@ export interface Match {
   winner: string;
   rules: Rules;
   presetName: string;
+  mode: MatchMode;
+  partner1: string | null;
+  partner2: string | null;
 }
 
 export interface Group {
@@ -51,8 +56,14 @@ export interface LiveMatchState {
   presetName: string;
   finishedSets: SetScore[];
   currentSet: SetScore;
-  server: 0 | 1;
+  // Singles: 0/1 (which side serves). Doubles: 0..3, a slot in rotationOrder()
+  // ([player1, player2, partner1, partner2] = A1,B1,A2,B2, the ITTF doubles serve order).
+  // side-for-slot is always `server % 2` - singles collapses to the old 0/1 meaning.
+  server: number;
   pointsSinceSwitch: number;
-  firstServerOfMatch: 0 | 1;
+  firstServerOfMatch: number;
   startedAt: string;
+  mode: MatchMode;
+  partner1: string | null;
+  partner2: string | null;
 }

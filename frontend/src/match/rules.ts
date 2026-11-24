@@ -39,7 +39,10 @@ export function createLiveMatch(
   player2: string,
   rules: Rules,
   presetName: string,
-  firstServer: 0 | 1,
+  firstServer: number,
+  mode: LiveMatchState['mode'] = 'singles',
+  partner1: string | null = null,
+  partner2: string | null = null,
 ): LiveMatchState {
   return {
     player1,
@@ -52,7 +55,21 @@ export function createLiveMatch(
     pointsSinceSwitch: 0,
     firstServerOfMatch: firstServer,
     startedAt: new Date().toISOString(),
+    mode,
+    partner1,
+    partner2,
   };
+}
+
+/** [A1, B1, A2, B2] - the fixed ITTF doubles serve/receive rotation order. Singles: [A, B]. */
+export function rotationOrder(state: LiveMatchState): string[] {
+  return state.mode === 'doubles'
+    ? [state.player1, state.player2, state.partner1!, state.partner2!]
+    : [state.player1, state.player2];
+}
+
+function slotCount(state: LiveMatchState): number {
+  return state.mode === 'doubles' ? 4 : 2;
 }
 
 /** Mutates nothing; returns the next state after a point for `scorer` (0 or 1). */
@@ -64,13 +81,13 @@ export function addPoint(state: LiveMatchState, scorer: 0 | 1): LiveMatchState {
   const every = deuce ? state.rules.deuceServeEvery : state.rules.serveEvery;
   const pointsSinceSwitch = state.pointsSinceSwitch + 1;
   const shouldSwitch = pointsSinceSwitch >= every;
-  const server: 0 | 1 = shouldSwitch ? (state.server === 0 ? 1 : 0) : state.server;
+  const server = shouldSwitch ? (state.server + 1) % slotCount(state) : state.server;
 
   const winner = setWinner(currentSet[0], currentSet[1], state.rules);
   if (winner !== null) {
     const finishedSets = [...state.finishedSets, currentSet];
     const setIndex = finishedSets.length;
-    const nextFirstServer: 0 | 1 = setIndex % 2 === 0 ? state.firstServerOfMatch : flip(state.firstServerOfMatch);
+    const nextFirstServer = setIndex % 2 === 0 ? state.firstServerOfMatch : flip(state.firstServerOfMatch);
     return {
       ...state,
       finishedSets,
@@ -88,8 +105,10 @@ export function addPoint(state: LiveMatchState, scorer: 0 | 1): LiveMatchState {
   };
 }
 
-function flip(x: 0 | 1): 0 | 1 {
-  return x === 0 ? 1 : 0;
+// x ^ 1 flips 0<->1 and 2<->3 - "same rotation position, other team" - correct for both
+// singles (binary sides) and doubles (4-slot rotation) with no mode branch needed.
+function flip(x: number): number {
+  return x ^ 1;
 }
 
 export function isMatchOver(state: LiveMatchState): boolean {

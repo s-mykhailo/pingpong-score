@@ -27,7 +27,7 @@ export function render(root: HTMLElement): () => void {
           live
             ? `<div class="card" id="resume-card">
                 <div class="md-typescale-title-medium">Матч триває</div>
-                <div class="muted md-typescale-body-medium">${playerName(data?.players ?? [], live.player1)} проти ${playerName(data?.players ?? [], live.player2)}</div>
+                <div class="muted md-typescale-body-medium">${sideLabel(data?.players ?? [], live.player1, live.partner1)} проти ${sideLabel(data?.players ?? [], live.player2, live.partner2)}</div>
                 <md-filled-button id="resume-btn"><md-icon slot="icon">play_arrow</md-icon>Продовжити</md-filled-button>
               </div>`
             : `<md-filled-button id="new-match-btn" style="align-self:stretch;">
@@ -47,9 +47,13 @@ export function render(root: HTMLElement): () => void {
       `;
     };
 
+    function sideLabel(players: Player[], primary: string, partner: string | null): string {
+      return partner !== null ? `${playerName(players, primary)} / ${playerName(players, partner)}` : playerName(players, primary);
+    }
+
     function matchRow(m: Match, players: Player[]): string {
-      const p1 = playerName(players, m.player1);
-      const p2 = playerName(players, m.player2);
+      const p1 = sideLabel(players, m.player1, m.partner1);
+      const p2 = sideLabel(players, m.player2, m.partner2);
       const setsWon1 = m.sets.filter(([a, b]) => a > b).length;
       const setsWon2 = m.sets.length - setsWon1;
       const winnerIsP1 = m.winner === m.player1;

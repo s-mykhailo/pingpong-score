@@ -1,6 +1,6 @@
 import { renderShell } from './shell';
 import { getData, subscribe } from '../store';
-import { computePlayerStats, computeHeadToHead, playerName, sortedMatchHistory } from '../stats/compute';
+import { computePlayerStats, computeHeadToHead, playerName, playerSide, sortedMatchHistory } from '../stats/compute';
 import type { Match, Player } from '../types';
 
 export function render(root: HTMLElement): () => void {
@@ -58,7 +58,7 @@ export function render(root: HTMLElement): () => void {
       const el = content.querySelector('#player-stats');
       if (!el || !selectedPlayer) return;
       const s = computePlayerStats(matches, selectedPlayer);
-      const history = sortedMatchHistory(matches.filter((m) => m.player1 === selectedPlayer || m.player2 === selectedPlayer)).slice(0, 10);
+      const history = sortedMatchHistory(matches.filter((m) => playerSide(m, selectedPlayer) !== null)).slice(0, 10);
       el.innerHTML = `
         <div class="card">
           <div class="row-between">
@@ -72,11 +72,15 @@ export function render(root: HTMLElement): () => void {
         <div class="col">
           ${history
             .map((m) => {
-              const opponentId = m.player1 === selectedPlayer ? m.player2 : m.player1;
-              const won = m.winner === selectedPlayer;
+              const mySide = playerSide(m, selectedPlayer);
+              const opponentPrimary = mySide === 0 ? m.player2 : m.player1;
+              const opponentPartner = mySide === 0 ? m.partner2 : m.partner1;
+              const opponentLabel =
+                opponentPartner !== null ? `${playerName(players, opponentPrimary)} / ${playerName(players, opponentPartner)}` : playerName(players, opponentPrimary);
+              const won = m.winner === (mySide === 0 ? m.player1 : m.player2);
               const date = new Date(m.playedAt).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' });
               return `<div class="card row-between">
-                <div class="md-typescale-body-medium">${won ? '✓' : '✗'} проти ${playerName(players, opponentId)}</div>
+                <div class="md-typescale-body-medium">${won ? '✓' : '✗'} проти ${opponentLabel}</div>
                 <div class="muted md-typescale-body-small">${date}</div>
               </div>`;
             })

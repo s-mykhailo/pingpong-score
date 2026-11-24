@@ -130,10 +130,19 @@ class RoomViewModel(
         _data.value = current.copy(presets = updated)
     }
 
-    fun startMatch(player1: String, player2: String, rules: Rules, presetName: String, firstServer: Int) {
+    fun startMatch(
+        player1: String,
+        player2: String,
+        rules: Rules,
+        presetName: String,
+        firstServer: Int,
+        mode: String = com.sm.smtts.data.MODE_SINGLES,
+        partner1: String? = null,
+        partner2: String? = null,
+    ) {
         undoHistory.clear()
         swapped = false
-        _liveMatch.value = MatchEngine.createLiveMatch(player1, player2, rules, presetName, firstServer)
+        _liveMatch.value = MatchEngine.createLiveMatch(player1, player2, rules, presetName, firstServer, mode, partner1, partner2)
     }
 
     fun resumeMatch() {
@@ -179,6 +188,9 @@ class RoomViewModel(
             winner = ids[winnerIdx],
             rules = state.rules,
             presetName = state.presetName,
+            mode = state.mode,
+            partner1 = state.partner1,
+            partner2 = state.partner2,
         )
         pendingQueue.add(roomId, match)
         val current = _data.value
