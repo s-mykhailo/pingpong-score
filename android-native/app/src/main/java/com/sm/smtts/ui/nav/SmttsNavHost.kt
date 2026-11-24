@@ -141,6 +141,7 @@ fun SmttsNavHost(
                     contentKey = { it::class },
                     label = "homeContent",
                 ) { currentContent ->
+                    val backgroundFrozen = transition.isRunning
                     when (currentContent) {
                         is HomeContent.AccountSettings -> AccountSettingsScreen(
                             session = current,
@@ -168,6 +169,7 @@ fun SmttsNavHost(
                                 navController.navigate(Routes.AUTH) { popUpTo(Routes.HOME) { inclusive = true } }
                             },
                             onExitToRoomList = { selectedRoom = null },
+                            backgroundFrozen = backgroundFrozen,
                         )
                         is HomeContent.RoomList -> HomeScreen(
                             session = current,
@@ -179,6 +181,7 @@ fun SmttsNavHost(
                             onLoggedOut = {
                                 navController.navigate(Routes.AUTH) { popUpTo(Routes.HOME) { inclusive = true } }
                             },
+                            backgroundFrozen = backgroundFrozen,
                         )
                     }
                 }

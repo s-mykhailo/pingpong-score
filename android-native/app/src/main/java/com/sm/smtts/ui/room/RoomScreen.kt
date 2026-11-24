@@ -71,6 +71,7 @@ fun RoomScreen(
     themeStore: ThemeStore,
     onLoggedOut: () -> Unit,
     onExitToRoomList: () -> Unit,
+    backgroundFrozen: Boolean = false,
 ) {
     val vm: RoomViewModel = viewModel(
         key = "room-$roomId",
@@ -105,6 +106,7 @@ fun RoomScreen(
         },
         label = "roomRoute",
     ) { currentRoute ->
+        val topoActive = !backgroundFrozen && !transition.isRunning
         when (currentRoute) {
             RoomRoute.MATCH_SETUP -> MatchSetupScreen(
                 vm = vm,
@@ -161,7 +163,7 @@ fun RoomScreen(
                 },
             ) { padding ->
                 Box(modifier = Modifier.fillMaxSize()) {
-                    TopoBackground(modifier = Modifier.fillMaxSize())
+                    TopoBackground(modifier = Modifier.fillMaxSize(), active = topoActive)
                     Box(modifier = Modifier.padding(padding)) {
                         PullToRefreshBox(
                             isRefreshing = refreshing,

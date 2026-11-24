@@ -83,6 +83,7 @@ fun HomeScreen(
     onOpenRoom: (RoomSummary) -> Unit,
     onOpenSettings: () -> Unit,
     onLoggedOut: () -> Unit,
+    backgroundFrozen: Boolean = false,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -207,7 +208,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxSize().alpha(0.35f),
                 contentScale = ContentScale.Crop,
             )
-            TopoBackground(modifier = Modifier.fillMaxSize(), darkTheme = darkTheme)
+            TopoBackground(modifier = Modifier.fillMaxSize(), darkTheme = darkTheme, active = !backgroundFrozen)
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
