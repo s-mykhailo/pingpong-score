@@ -1,6 +1,6 @@
 import { navigate } from '../router';
 import { getLiveMatch, setLiveMatch } from '../match/liveMatch';
-import { addPoint, isMatchOver, matchWinner, sideSwitchDue } from '../match/rules';
+import { addPoint, isMatchOver, matchWinner, rotationOrder, sideSwitchDue } from '../match/rules';
 import { queueMatch } from '../offline/db';
 import { syncPendingMatches, refreshPendingCount } from '../offline/sync';
 import { mergeMatchLocal } from '../store';
@@ -24,13 +24,21 @@ export function render(root: HTMLElement): () => void {
   const players = getData()?.players ?? [];
   const nameOf = (id: string) => players.find((p) => p.id === id)?.name ?? '?';
 
+  function sideMembersHtml(state: LiveMatchState, idx: 0 | 1, servingPlayerId: string): string {
+    const ids = [state.player1, state.player2] as const;
+    const partners = [state.partner1, state.partner2] as const;
+    const members = [ids[idx], partners[idx]].filter((id): id is string => id !== null);
+    return members
+      .map((id) => `<div class="scoreboard-name">${id === servingPlayerId ? '<span class="serve-dot"></span>' : ''}${nameOf(id)}</div>`)
+      .join('');
+  }
+
   function draw() {
     const state = getLiveMatch();
     if (!state) return;
     const leftIdx: 0 | 1 = swapped ? 1 : 0;
     const rightIdx: 0 | 1 = swapped ? 0 : 1;
-    const ids = [state.player1, state.player2] as const;
-    const serverOnLeft = state.server === leftIdx;
+    const servingPlayerId = rotationOrder(state)[state.server];
 
     root.innerHTML = `
       <div class="scoreboard">
@@ -41,12 +49,12 @@ export function render(root: HTMLElement): () => void {
           </md-filled-tonal-button>
         </div>
         <div class="scoreboard-half left" data-side="${leftIdx}">
-          <div class="scoreboard-name">${serverOnLeft ? '<span class="serve-dot"></span>' : ''}${nameOf(ids[leftIdx])}</div>
+          ${sideMembersHtml(state, leftIdx, servingPlayerId)}
           <div class="scoreboard-score">${state.currentSet[leftIdx]}</div>
           <div class="scoreboard-sets">${setsSummary(state, leftIdx)}</div>
         </div>
         <div class="scoreboard-half right" data-side="${rightIdx}">
-          <div class="scoreboard-name">${nameOf(ids[rightIdx])}${!serverOnLeft ? '<span class="serve-dot"></span>' : ''}</div>
+          ${sideMembersHtml(state, rightIdx, servingPlayerId)}
           <div class="scoreboard-score">${state.currentSet[rightIdx]}</div>
           <div class="scoreboard-sets">${setsSummary(state, rightIdx)}</div>
         </div>
@@ -98,6 +106,9 @@ export function render(root: HTMLElement): () => void {
       winner: ids[winnerIdx ?? 0],
       rules: state.rules,
       presetName: state.presetName,
+      mode: state.mode,
+      partner1: state.partner1,
+      partner2: state.partner2,
     };
     await queueMatch(match);
     mergeMatchLocal(match);
@@ -107,12 +118,17 @@ export function render(root: HTMLElement): () => void {
     showResult(match, winnerIdx ?? 0);
   }
 
+  function teamLabel(match: Match, idx: 0 | 1): string {
+    const primary = idx === 0 ? match.player1 : match.player2;
+    const partner = idx === 0 ? match.partner1 : match.partner2;
+    return partner !== null ? `${nameOf(primary)} / ${nameOf(partner)}` : nameOf(primary);
+  }
+
   function showResult(match: Match, winnerIdx: 0 | 1) {
-    const ids = [match.player1, match.player2] as const;
     root.innerHTML = `
       <div class="scoreboard" style="flex-direction:column; align-items:center; justify-content:center; gap:16px;">
         <md-icon style="font-size:64px; width:64px; height:64px; color:var(--md-sys-color-primary);">emoji_events</md-icon>
-        <div class="md-typescale-headline-medium">${nameOf(ids[winnerIdx])} переміг!</div>
+        <div class="md-typescale-headline-medium">${teamLabel(match, winnerIdx)} переміг!</div>
         <div class="muted md-typescale-title-medium">${match.sets.map(([a, b]) => `${a}:${b}`).join(', ')}</div>
         <md-filled-button id="done-btn">Готово</md-filled-button>
       </div>

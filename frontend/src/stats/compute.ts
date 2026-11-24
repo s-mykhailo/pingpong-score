@@ -11,9 +11,16 @@ export interface PlayerStats {
   currentStreak: number; // positive = win streak, negative = loss streak
 }
 
+/** 0 if playerId is on the player1/partner1 side, 1 if on the player2/partner2 side, null if not in this match. */
+export function playerSide(m: Match, playerId: string): 0 | 1 | null {
+  if (playerId === m.player1 || playerId === m.partner1) return 0;
+  if (playerId === m.player2 || playerId === m.partner2) return 1;
+  return null;
+}
+
 function matchesForPlayer(matches: Match[], playerId: string): Match[] {
   return matches
-    .filter((m) => m.player1 === playerId || m.player2 === playerId)
+    .filter((m) => playerSide(m, playerId) !== null)
     .sort((a, b) => a.playedAt.localeCompare(b.playedAt));
 }
 
@@ -26,12 +33,12 @@ export function computePlayerStats(matches: Match[], playerId: string): PlayerSt
   const results: boolean[] = [];
 
   for (const m of own) {
-    const won = m.winner === playerId;
+    const isP1 = playerSide(m, playerId) === 0;
+    const won = m.winner === (isP1 ? m.player1 : m.player2);
     if (won) wins++;
     else losses++;
     results.push(won);
 
-    const isP1 = m.player1 === playerId;
     for (const [s1, s2] of m.sets) {
       const mine = isP1 ? s1 : s2;
       const theirs = isP1 ? s2 : s1;
@@ -99,9 +106,16 @@ export function computeMvp(matches: Match[], sinceMs: number | null): MvpEntry |
 
   for (const m of matches) {
     if (sinceMs !== null && new Date(m.playedAt).getTime() < sinceMs) continue;
-    playedByPlayer.set(m.player1, (playedByPlayer.get(m.player1) ?? 0) + 1);
-    playedByPlayer.set(m.player2, (playedByPlayer.get(m.player2) ?? 0) + 1);
-    winsByPlayer.set(m.winner, (winsByPlayer.get(m.winner) ?? 0) + 1);
+    const winningSideIds = (m.winner === m.player1 ? [m.player1, m.partner1] : [m.player2, m.partner2]).filter(
+      (id): id is string => id !== null,
+    );
+    for (const id of [m.player1, m.partner1, m.player2, m.partner2]) {
+      if (id === null) continue;
+      playedByPlayer.set(id, (playedByPlayer.get(id) ?? 0) + 1);
+    }
+    for (const id of winningSideIds) {
+      winsByPlayer.set(id, (winsByPlayer.get(id) ?? 0) + 1);
+    }
   }
 
   let best: MvpEntry | null = null;

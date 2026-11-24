@@ -15,7 +15,7 @@ const SHEET_INVITES = 'Invites';
 const GROUP_HEADERS = ['id', 'name', 'salt', 'joinHash', 'adminHash', 'createdAt'];
 const SESSION_HEADERS = ['token', 'groupId', 'role', 'createdAt', 'lastUsed'];
 const PLAYER_HEADERS = ['id', 'name', 'createdAt', 'deleted'];
-const MATCH_HEADERS = ['id', 'playedAt', 'player1', 'player2', 'sets', 'winner', 'rules', 'presetName', 'createdAt', 'deleted'];
+const MATCH_HEADERS = ['id', 'playedAt', 'player1', 'player2', 'sets', 'winner', 'rules', 'presetName', 'createdAt', 'deleted', 'mode', 'partner1', 'partner2'];
 const PRESET_HEADERS = ['id', 'name', 'rules', 'createdAt', 'deleted'];
 const USER_HEADERS = ['id', 'token', 'nickname', 'avatar', 'role', 'createdAt', 'recoverySalt', 'recoveryHash'];
 const ROOM_HEADERS = ['id', 'name', 'ownerId', 'createdAt'];
@@ -683,6 +683,9 @@ function readMatches_(g) {
       winner: String(m.winner),
       rules: safeParse_(m.rules, null),
       presetName: String(m.presetName || ''),
+      mode: m.mode ? String(m.mode) : 'singles',
+      partner1: m.partner1 ? String(m.partner1) : null,
+      partner2: m.partner2 ? String(m.partner2) : null,
     }));
 }
 
@@ -691,10 +694,15 @@ function addMatch_(g, m) {
   if (!m.player1 || !m.player2 || m.player1 === m.player2) throw new Error('bad players');
   if (!Array.isArray(m.sets) || m.sets.length === 0) throw new Error('sets required');
 
+  const isDoubles = m.mode === 'doubles';
   const players = readPlayers_(g).map(p => p.id);
-  if (players.indexOf(String(m.player1)) === -1 || players.indexOf(String(m.player2)) === -1) {
-    throw new Error('unknown player');
+  const ids = [String(m.player1), String(m.player2)];
+  if (isDoubles) {
+    if (!m.partner1 || !m.partner2) throw new Error('bad players');
+    ids.push(String(m.partner1), String(m.partner2));
   }
+  if (new Set(ids).size !== ids.length) throw new Error('bad players');
+  if (ids.some(id => players.indexOf(id) === -1)) throw new Error('unknown player');
 
   const rules = validateRules_(m.rules);
   const need = Math.ceil(rules.bestOf / 2);
@@ -722,6 +730,9 @@ function addMatch_(g, m) {
     String(m.presetName || '').slice(0, 40),
     now_(),
     false,
+    isDoubles ? 'doubles' : 'singles',
+    isDoubles ? String(m.partner1) : '',
+    isDoubles ? String(m.partner2) : '',
   ]);
   return { id: String(m.id), winner };
 }

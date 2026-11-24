@@ -55,6 +55,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sm.smtts.data.Match
+import com.sm.smtts.data.MatchEngine
 import com.sm.smtts.data.StatsEngine
 import com.sm.smtts.ui.components.PressButton
 import kotlin.math.PI
@@ -81,10 +82,13 @@ fun ScoreboardScreen(vm: RoomViewModel, onExit: () -> Unit) {
 
     val players = data?.players ?: emptyList()
     fun nameOf(id: String) = StatsEngine.playerName(players, id)
+    fun teamLabel(primary: String, partner: String?) =
+        if (partner != null) "${nameOf(primary)} / ${nameOf(partner)}" else nameOf(primary)
 
     val result = finished
     if (result != null) {
-        val winnerName = nameOf(result.winner)
+        val winnerPartner = if (result.winner == result.player1) result.partner1 else result.partner2
+        val winnerName = teamLabel(result.winner, winnerPartner)
         val titleScale = remember { Animatable(0.6f) }
         LaunchedEffect(result) {
             titleScale.animateTo(
@@ -117,7 +121,10 @@ fun ScoreboardScreen(vm: RoomViewModel, onExit: () -> Unit) {
     val leftIdx = if (swapped) 1 else 0
     val rightIdx = if (swapped) 0 else 1
     val ids = listOf(state.player1, state.player2)
-    val serverOnLeft = state.server == leftIdx
+    val partners = listOf(state.partner1, state.partner2)
+    val servingPlayerId = MatchEngine.rotationOrder(state)[state.server]
+
+    fun sideMembers(idx: Int): List<String> = listOfNotNull(ids[idx], partners[idx])
 
     Box(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxSize()) {
@@ -125,20 +132,20 @@ fun ScoreboardScreen(vm: RoomViewModel, onExit: () -> Unit) {
                 modifier = Modifier.weight(1f).fillMaxHeight(),
                 background = MaterialTheme.colorScheme.primaryContainer,
                 content = MaterialTheme.colorScheme.onPrimaryContainer,
-                name = nameOf(ids[leftIdx]),
+                members = sideMembers(leftIdx).map { it to nameOf(it) },
+                servingPlayerId = servingPlayerId,
                 score = state.currentSet.forIdx(leftIdx),
                 sets = state.finishedSets.map { it.forIdx(leftIdx) },
-                serving = serverOnLeft,
                 onTap = { vm.addPoint(leftIdx) { m -> finished = m } },
             )
             ScoreHalf(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
                 background = MaterialTheme.colorScheme.tertiaryContainer,
                 content = MaterialTheme.colorScheme.onTertiaryContainer,
-                name = nameOf(ids[rightIdx]),
+                members = sideMembers(rightIdx).map { it to nameOf(it) },
+                servingPlayerId = servingPlayerId,
                 score = state.currentSet.forIdx(rightIdx),
                 sets = state.finishedSets.map { it.forIdx(rightIdx) },
-                serving = !serverOnLeft,
                 onTap = { vm.addPoint(rightIdx) { m -> finished = m } },
             )
         }
@@ -162,10 +169,10 @@ private fun ScoreHalf(
     modifier: Modifier,
     background: androidx.compose.ui.graphics.Color,
     content: androidx.compose.ui.graphics.Color,
-    name: String,
+    members: List<Pair<String, String>>, // (playerId, name) - 1 entry for singles, 2 for doubles
+    servingPlayerId: String,
     score: Int,
     sets: List<Int>,
-    serving: Boolean,
     onTap: () -> Unit,
 ) {
     Column(
@@ -175,11 +182,13 @@ private fun ScoreHalf(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (serving) {
-                Box(Modifier.size(10.dp).background(MaterialTheme.colorScheme.secondary, CircleShape))
+        members.forEach { (id, name) ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (id == servingPlayerId) {
+                    Box(Modifier.size(10.dp).background(MaterialTheme.colorScheme.secondary, CircleShape))
+                }
+                Text(name, style = MaterialTheme.typography.titleLarge, color = content)
             }
-            Text(name, style = MaterialTheme.typography.titleLarge, color = content)
         }
         AnimatedContent(
             targetState = score,
