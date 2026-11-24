@@ -18,8 +18,8 @@ android {
         applicationId = "com.sm.smtts"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 5
+        versionName = "1.4"
         // App has no localized strings.xml of its own (all UI text is hardcoded Ukrainian in
         // Compose) - without this, AGP bundles every locale's translated strings from AndroidX/
         // Compose dependencies (~100 locales) into resources.arsc, which bloats the parsed
