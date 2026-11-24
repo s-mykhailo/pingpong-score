@@ -37,3 +37,13 @@ https://script.google.com/macros/s/AKfycbxi_WfYMsZnjewkr4poOwbKzA-wHPOYvsJsv_5tI
 **License:** GPL-3.0, see [LICENSE](LICENSE).
 
 **Author:** S-Mykhailo
+
+---
+
+## Автооновлення та автор
+
+Сервіси автооновлюються з GitHub.
+
+- Репозиторій: https://github.com/s-mykhailo/pingpong-score
+- Канал: https://t.me/s_mykhailo_dev
+- Автор: https://t.me/savchenko_mykhailo
