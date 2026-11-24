@@ -20,6 +20,12 @@ android {
         targetSdk = 36
         versionCode = 4
         versionName = "1.3"
+        // App has no localized strings.xml of its own (all UI text is hardcoded Ukrainian in
+        // Compose) - without this, AGP bundles every locale's translated strings from AndroidX/
+        // Compose dependencies (~100 locales) into resources.arsc, which bloats the parsed
+        // package info enough to exceed the Binder IPC transaction limit during install
+        // ("Failed transaction (2147483646)" / TransactionTooLargeException).
+        resourceConfigurations += listOf("en")
     }
 
     signingConfigs {
