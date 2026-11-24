@@ -30,16 +30,18 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.sm.smtts.R
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.components.MaskedCodeField
 import com.sm.smtts.ui.components.PressButton
-import com.sm.smtts.ui.components.SegmentedCodeField
 import com.sm.smtts.ui.theme.LocalDarkTheme
 import com.sm.smtts.ui.theme.SmttsElevation
+import com.sm.smtts.ui.theme.TopoBackground
 import kotlinx.coroutines.launch
 
 @Composable
@@ -59,9 +61,10 @@ fun AuthScreen(
         Image(
             painter = painterResource(if (darkTheme) R.drawable.home_wallpaper_dark else R.drawable.home_wallpaper_light),
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().alpha(0.35f),
             contentScale = ContentScale.Crop,
         )
+        TopoBackground(modifier = Modifier.fillMaxSize(), darkTheme = darkTheme)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -117,7 +120,7 @@ fun AuthScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        SegmentedCodeField(
+                        MaskedCodeField(
                             value = code,
                             onValueChange = { code = it },
                             codeLength = 14,

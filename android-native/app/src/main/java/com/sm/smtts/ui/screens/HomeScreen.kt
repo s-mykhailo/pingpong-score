@@ -45,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -63,8 +64,8 @@ import com.sm.smtts.data.RoomSummary
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.UpdateChecker
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.components.MaskedCodeField
 import com.sm.smtts.ui.components.PressFab
-import com.sm.smtts.ui.components.SegmentedCodeField
 import com.sm.smtts.ui.theme.LocalDarkTheme
 import com.sm.smtts.ui.theme.SmttsElevation
 import com.sm.smtts.ui.theme.TopoBackground
@@ -203,7 +204,7 @@ fun HomeScreen(
             Image(
                 painter = painterResource(if (darkTheme) R.drawable.home_wallpaper_dark else R.drawable.home_wallpaper_light),
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().alpha(0.35f),
                 contentScale = ContentScale.Crop,
             )
             TopoBackground(modifier = Modifier.fillMaxSize(), darkTheme = darkTheme)
@@ -411,10 +412,11 @@ private fun JoinRoomDialog(onDismiss: () -> Unit, onJoin: (String) -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                SegmentedCodeField(
+                MaskedCodeField(
                     value = code,
                     onValueChange = { code = it },
                     codeLength = 10,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         },

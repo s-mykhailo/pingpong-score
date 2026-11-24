@@ -45,8 +45,8 @@ import com.sm.smtts.data.Session
 import com.sm.smtts.data.ThemeMode
 import com.sm.smtts.data.ThemeStore
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.components.MaskedCodeField
 import com.sm.smtts.ui.components.PressButton
-import com.sm.smtts.ui.components.SegmentedCodeField
 import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
 
@@ -197,7 +197,7 @@ fun AccountSettings(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                SegmentedCodeField(
+                MaskedCodeField(
                     value = adminCodeInput,
                     onValueChange = { adminCodeInput = it },
                     codeLength = 10,

@@ -20,7 +20,8 @@ private val LEVELS = floatArrayOf(-0.55f, -0.4f, -0.25f, -0.1f, 0.05f, 0.2f, 0.3
 private const val CELL_DP = 32f
 private const val NOISE_SCALE = 0.09f
 private const val Z_RANGE = 0.6f
-private const val LINE_ALPHA = 0.14f
+private const val LINE_ALPHA = 0.30f
+private const val STROKE_DP = 1.3f
 
 private class TopoBuffers {
     var cols = 0
@@ -81,7 +82,7 @@ fun TopoBackground(modifier: Modifier = Modifier, darkTheme: Boolean = LocalDark
             }
         }
 
-        val strokeWidth = 1.dp.toPx()
+        val strokeWidth = STROKE_DP.dp.toPx()
 
         for (level in LEVELS) {
             val path = buffers.path
