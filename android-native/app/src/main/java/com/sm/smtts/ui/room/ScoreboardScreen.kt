@@ -177,7 +177,7 @@ private fun ScoreHalf(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (serving) {
-                Box(Modifier.size(10.dp).background(content, CircleShape))
+                Box(Modifier.size(10.dp).background(MaterialTheme.colorScheme.secondary, CircleShape))
             }
             Text(name, style = MaterialTheme.typography.titleLarge, color = content)
         }

@@ -126,7 +126,7 @@ fun AccountSettings(
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(session.user.nickname, style = MaterialTheme.typography.titleMedium)
-                Text(roleLabel(session.user.role), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(roleLabel(session.user.role), color = roleAccentColor(session.user.role))
             }
         }
 
@@ -269,6 +269,14 @@ internal fun roleLabel(role: String) = when (role) {
     "masterkey" -> "Master"
     "admin" -> "Admin"
     else -> "User"
+}
+
+/** Distinct accent per role, matching the role's "privilege level" - masterkey > admin > user. */
+@Composable
+internal fun roleAccentColor(role: String) = when (role) {
+    "masterkey" -> MaterialTheme.colorScheme.tertiary
+    "admin" -> MaterialTheme.colorScheme.secondary
+    else -> MaterialTheme.colorScheme.onSurfaceVariant
 }
 
 /** "Про додаток" - версія збірки та посилання на Telegram-канал і автора. */
