@@ -36,7 +36,7 @@ import com.sm.smtts.data.PendingQueue
 import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.ThemeStore
-import com.sm.smtts.ui.theme.DriftingBackground
+import com.sm.smtts.ui.theme.TopoBackground
 import kotlinx.coroutines.launch
 
 private enum class RoomTab(val label: String) { HOME("Головна"), STATS("Статистика"), PLAYERS("Гравці"), SETTINGS("Налаштування") }
@@ -128,7 +128,7 @@ fun RoomScreen(
             },
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize()) {
-                DriftingBackground(modifier = Modifier.fillMaxSize())
+                TopoBackground(modifier = Modifier.fillMaxSize())
                 Box(modifier = Modifier.padding(padding)) {
                     PullToRefreshBox(
                         isRefreshing = refreshing,

@@ -9,7 +9,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.ThemeStore
+import com.sm.smtts.ui.components.PressButton
 import com.sm.smtts.ui.screens.AccountSettings
 import kotlinx.coroutines.launch
 
@@ -44,7 +44,7 @@ fun SettingsTab(
 
         AccountSettings(session = session, authRepository = authRepository, themeStore = themeStore)
 
-        Button(
+        PressButton(
             onClick = {
                 scope.launch {
                     authRepository.logout(session.token)

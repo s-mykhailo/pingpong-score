@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,6 +45,7 @@ import com.sm.smtts.data.Session
 import com.sm.smtts.data.ThemeMode
 import com.sm.smtts.data.ThemeStore
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.components.PressButton
 import com.sm.smtts.ui.components.SegmentedCodeField
 import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
@@ -82,7 +82,7 @@ fun AccountSettingsScreen(
                 themeStore = themeStore,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Button(
+            PressButton(
                 onClick = {
                     scope.launch {
                         authRepository.logout(session.token)
@@ -166,7 +166,7 @@ fun AccountSettings(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Button(
+                PressButton(
                     onClick = {
                         error = null
                         notice = null
@@ -203,7 +203,7 @@ fun AccountSettings(
                     codeLength = 10,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Button(
+                PressButton(
                     onClick = {
                         error = null
                         notice = null

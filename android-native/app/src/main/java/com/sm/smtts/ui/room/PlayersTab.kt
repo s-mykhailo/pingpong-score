@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -41,6 +40,7 @@ import com.sm.smtts.data.RoomRepository
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.StatsEngine
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.components.PressButton
 import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
 
@@ -88,9 +88,9 @@ fun PlayersTab(
                 singleLine = true,
                 modifier = Modifier.weight(1f),
             )
-            Button(onClick = {
+            PressButton(onClick = {
                 val name = newName.trim()
-                if (name.isBlank()) return@Button
+                if (name.isBlank()) return@PressButton
                 vm.addPlayer(name) { error = it }
                 newName = ""
             }) {

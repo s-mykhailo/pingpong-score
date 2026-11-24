@@ -31,7 +31,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sm.smtts.data.Match
 import com.sm.smtts.data.StatsEngine
+import com.sm.smtts.ui.components.PressButton
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.random.Random
@@ -105,7 +105,7 @@ fun ScoreboardScreen(vm: RoomViewModel, onExit: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Button(onClick = { vm.clearLiveMatch(); onExit() }) { Text("Готово") }
+                PressButton(onClick = { vm.clearLiveMatch(); onExit() }) { Text("Готово") }
             }
             ConfettiOverlay(modifier = Modifier.fillMaxSize())
         }

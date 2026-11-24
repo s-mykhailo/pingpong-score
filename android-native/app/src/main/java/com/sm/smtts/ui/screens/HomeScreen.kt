@@ -2,7 +2,11 @@ package com.sm.smtts.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +27,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,10 +63,11 @@ import com.sm.smtts.data.RoomSummary
 import com.sm.smtts.data.Session
 import com.sm.smtts.data.UpdateChecker
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.components.PressFab
 import com.sm.smtts.ui.components.SegmentedCodeField
-import com.sm.smtts.ui.theme.DriftingBackground
 import com.sm.smtts.ui.theme.LocalDarkTheme
 import com.sm.smtts.ui.theme.SmttsElevation
+import com.sm.smtts.ui.theme.TopoBackground
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -184,11 +188,11 @@ fun HomeScreen(
         floatingActionButton = {
             Column(horizontalAlignment = androidx.compose.ui.Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (canCreateRooms) {
-                    FloatingActionButton(onClick = { showCreateDialog = true }) {
+                    PressFab(onClick = { showCreateDialog = true }) {
                         Icon(Icons.Filled.Add, contentDescription = "Створити кімнату")
                     }
                 }
-                FloatingActionButton(onClick = { showJoinDialog = true }) {
+                PressFab(onClick = { showJoinDialog = true }) {
                     Icon(Icons.Filled.GroupAdd, contentDescription = "Приєднатися за кодом")
                 }
             }
@@ -202,7 +206,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
-            DriftingBackground(modifier = Modifier.fillMaxSize(), darkTheme = darkTheme)
+            TopoBackground(modifier = Modifier.fillMaxSize(), darkTheme = darkTheme)
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -341,10 +345,18 @@ private fun PendingRoomCard(title: String, status: String) {
 
 @Composable
 private fun RoomCard(room: RoomSummary, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val elevation by animateDpAsState(
+        targetValue = if (pressed) SmttsElevation.cardPressed else SmttsElevation.card,
+        animationSpec = tween(120),
+        label = "roomCardElevation",
+    )
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = SmttsElevation.card),
+        interactionSource = interactionSource,
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(room.name, style = MaterialTheme.typography.titleLarge)

@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -43,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.sm.smtts.data.Player
 import com.sm.smtts.data.Preset
 import com.sm.smtts.data.Rules
+import com.sm.smtts.ui.components.PressButton
 
 private val DefaultRules = Rules()
 
@@ -90,9 +90,9 @@ fun MatchSetupScreen(vm: RoomViewModel, onBack: () -> Unit, onStart: () -> Unit)
                 singleLine = true,
                 modifier = Modifier.weight(1f),
             )
-            Button(onClick = {
+            PressButton(onClick = {
                 val name = newPlayerName.trim()
-                if (name.isBlank()) return@Button
+                if (name.isBlank()) return@PressButton
                 vm.addPlayer(name) { msg -> error = msg }
                 newPlayerName = ""
             }) {
@@ -135,9 +135,9 @@ fun MatchSetupScreen(vm: RoomViewModel, onBack: () -> Unit, onStart: () -> Unit)
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                         )
-                        Button(onClick = {
+                        PressButton(onClick = {
                             val name = presetNameToSave.trim()
-                            if (name.isBlank()) return@Button
+                            if (name.isBlank()) return@PressButton
                             vm.savePreset(name, customRules, onSaved = { preset ->
                                 presetId = preset.id
                                 presetNameToSave = ""
@@ -156,15 +156,15 @@ fun MatchSetupScreen(vm: RoomViewModel, onBack: () -> Unit, onStart: () -> Unit)
 
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
-        Button(
+        PressButton(
             onClick = {
                 if (player1.isBlank() || player2.isBlank() || player1 == player2) {
                     error = "Оберіть двох різних гравців."
-                    return@Button
+                    return@PressButton
                 }
                 if (rules.bestOf % 2 == 0 || rules.bestOf < 1 || rules.pointsToWin < 1) {
                     error = "Перевірте правила матчу."
-                    return@Button
+                    return@PressButton
                 }
                 val presetName = if (usingCustom) "" else (selectedPreset?.name ?: "")
                 vm.startMatch(player1, player2, rules, presetName, firstServer)

@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.sm.smtts.data.Match
 import com.sm.smtts.data.Player
 import com.sm.smtts.data.StatsEngine
+import com.sm.smtts.ui.components.PressButton
 import com.sm.smtts.ui.theme.SmttsElevation
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -60,14 +60,14 @@ fun RoomHomeTab(vm: RoomViewModel, roomName: String, onNewMatch: () -> Unit, onR
                         "${StatsEngine.playerName(players, live!!.player1)} проти ${StatsEngine.playerName(players, live!!.player2)}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Button(onClick = onResumeMatch) {
+                    PressButton(onClick = onResumeMatch) {
                         Icon(Icons.Filled.PlayArrow, contentDescription = null)
                         Text("Продовжити")
                     }
                 }
             }
         } else {
-            Button(onClick = onNewMatch, modifier = Modifier.fillMaxWidth()) {
+            PressButton(onClick = onNewMatch, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Add, contentDescription = null)
                 Text("Новий матч")
             }

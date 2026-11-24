@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SportsTennis
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.sm.smtts.R
 import com.sm.smtts.data.AuthRepository
 import com.sm.smtts.data.friendlyMessage
+import com.sm.smtts.ui.components.PressButton
 import com.sm.smtts.ui.components.SegmentedCodeField
 import com.sm.smtts.ui.theme.LocalDarkTheme
 import com.sm.smtts.ui.theme.SmttsElevation
@@ -129,7 +129,7 @@ fun AuthScreen(
                         Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     }
 
-                    Button(
+                    PressButton(
                         onClick = {
                             error = null
                             loading = true
