@@ -4,11 +4,9 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -39,7 +37,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -49,7 +46,6 @@ import com.sm.smtts.data.Session
 import com.sm.smtts.data.ThemeMode
 import com.sm.smtts.data.ThemeStore
 import com.sm.smtts.data.friendlyMessage
-import com.sm.smtts.ui.components.IdenticonAvatar
 import com.sm.smtts.ui.components.SegmentedCodeField
 import com.sm.smtts.ui.theme.SmttsElevation
 import kotlinx.coroutines.launch
@@ -122,48 +118,15 @@ fun AccountSettings(
     var error by remember { mutableStateOf<String?>(null) }
     var notice by remember { mutableStateOf<String?>(null) }
     var codeToShow by remember { mutableStateOf<Pair<String, String>?>(null) } // title to code
-    var nicknameInput by remember(session.user.nickname) { mutableStateOf(session.user.nickname) }
-    var nicknameBusy by remember { mutableStateOf(false) }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = SmttsElevation.card),
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    IdenticonAvatar(
-                        seedText = nicknameInput.ifBlank { session.user.nickname },
-                        modifier = Modifier.size(56.dp),
-                    )
-                    Text(roleLabel(session.user.role), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                OutlinedTextField(
-                    value = nicknameInput,
-                    onValueChange = { nicknameInput = it },
-                    label = { Text("Нікнейм") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Button(
-                    onClick = {
-                        error = null
-                        notice = null
-                        nicknameBusy = true
-                        scope.launch {
-                            try {
-                                authRepository.updateProfile(session.token, nicknameInput.trim(), session.user.avatar)
-                                notice = "Нікнейм збережено."
-                            } catch (e: Exception) {
-                                error = friendlyMessage(e)
-                            } finally {
-                                nicknameBusy = false
-                            }
-                        }
-                    },
-                    enabled = !nicknameBusy && nicknameInput.isNotBlank() && nicknameInput != session.user.nickname,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("Зберегти") }
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(session.user.nickname, style = MaterialTheme.typography.titleMedium)
+                Text(roleLabel(session.user.role), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 

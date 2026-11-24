@@ -3,6 +3,7 @@ package com.sm.smtts.ui.screens
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,6 +90,7 @@ fun HomeScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var showJoinDialog by remember { mutableStateOf(false) }
     var showCreateDialog by remember { mutableStateOf(false) }
+    var showAccountDialog by remember { mutableStateOf(false) }
     val canCreateRooms = session.user.role == "admin" || session.user.role == "masterkey"
     val hasContent = rooms.isNotEmpty() || pendingCreates.isNotEmpty() || pendingJoins.isNotEmpty()
     var syncingRooms by remember { mutableStateOf(false) }
@@ -208,7 +210,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Column {
+                    Column(modifier = Modifier.clickable { showAccountDialog = true }) {
                         Text(
                             session.user.nickname,
                             style = MaterialTheme.typography.headlineSmall,
@@ -281,6 +283,14 @@ fun HomeScreen(
                 }
             }
         }
+    }
+
+    if (showAccountDialog) {
+        AccountDialog(
+            session = session,
+            authRepository = authRepository,
+            onDismiss = { showAccountDialog = false },
+        )
     }
 
     if (showJoinDialog) {
